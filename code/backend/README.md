@@ -9,7 +9,7 @@ Spring Boot 3.5 / Java 21 / Gradle 기반 백엔드입니다.
 3. 기본 포트: `http://localhost:8080`. 헬스체크: `GET /api/health` → `{"status":"ok"}`
 4. H2 콘솔(개발용 인메모리 DB): `http://localhost:8080/h2-console` (JDBC URL: `jdbc:h2:mem:iyk`, 유저 `sa`, 비밀번호 없음)
 
-`./gradlew build`와 `bootRun`으로 헬스체크·추천 API까지 실제로 기동해서 확인한 상태입니다.
+`./gradlew build`와 `bootRun`으로 헬스체크·추천·인증·좋아요·댓글까지 curl로 실제 기동 후 확인한 상태입니다.
 
 ## 패키지 구조
 
@@ -21,16 +21,16 @@ com.iyk.backend
 │   ├── controller/ RecommendationController
 │   ├── service/    RecommendationService (지금은 목데이터 반환)
 │   └── dto/        SpotDto, MbtiStyleDto, RecommendationResponse
-├── domain/         # 내부 로직 — DB 엔티티 · 리포지토리
-│   ├── user/       User, UserRepository
-│   ├── spot/       SpotCache, SpotCacheRepository (TourAPI 캐시)
-│   ├── like/       Like, LikeRepository
-│   └── comment/    Comment, CommentRepository
-├── config/         CorsConfig (로컬 프론트 5173 포트 허용)
+├── domain/         # 내부 로직 — DB 엔티티 · 리포지토리 · 인증/좋아요/댓글 API
+│   ├── user/       User, UserRepository, AuthService, AuthController (회원가입/로그인)
+│   ├── spot/       SpotCache, SpotCacheRepository (TourAPI 캐시, 아직 미사용)
+│   ├── like/       Like, LikeRepository, LikeService, LikeController (찜 토글)
+│   └── comment/    Comment, CommentRepository, CommentService, CommentController (댓글 CRUD)
+├── config/         CorsConfig, SecurityConfig, JwtTokenProvider, JwtAuthenticationFilter
 └── common/         HealthController, GlobalExceptionHandler
 ```
 
-`domain` 쪽은 엔티티·리포지토리까지만 만들어뒀고, 회원가입/로그인/좋아요·댓글 컨트롤러는 아직 없습니다 — 2~3주차에 이어서 구현하면 됩니다. `external` 쪽 `GET /api/recommendations?mbti=INFJ`는 목데이터로 실제 동작하므로, 프론트엔드가 지금 바로 이 서버에 fetch해서 응답 형식을 검증할 수 있습니다.
+인증은 JWT(HS512, 24시간 만료) 방식입니다. 로그인 응답의 `accessToken`을 `Authorization: Bearer <token>` 헤더로 보내면 좋아요/댓글 작성·삭제가 가능합니다. GET 요청과 `/api/auth/**`는 인증 없이 열려 있습니다. `external` 쪽 `GET /api/recommendations?mbti=INFJ`는 여전히 목데이터로 동작하므로, 프론트엔드가 지금 바로 이 서버에 fetch해서 응답 형식을 검증할 수 있습니다.
 
 API 계약 전체는 [docs/md/api-spec.md](../../docs/md/api-spec.md), DB 스키마는 [docs/md/db-schema.md](../../docs/md/db-schema.md), MBTI 카테고리 매핑 기준은 [docs/md/mbti-mapping.md](../../docs/md/mbti-mapping.md) 참고. 코드와 문서 중 하나를 바꾸면 반드시 다른 쪽도 맞춰주세요.
 

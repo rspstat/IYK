@@ -20,3 +20,8 @@ spring:
 
 server:
   port: 8080
+
+jwt:
+  # 개발용 기본값입니다. 배포 전 반드시 환경변수(JWT_SECRET)로 교체하세요.
+  secret: ${JWT_SECRET:iyk-dev-only-jwt-secret-key-please-override-in-production-32bytes-min}
+  expiration-ms: 86400000 # 24시간

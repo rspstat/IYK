@@ -35,7 +35,9 @@
 
 ---
 
-## 인증
+## 인증 — 구현 완료
+
+`AuthController`/`AuthService` 실제 동작. 비밀번호는 BCrypt로 해시 저장, 토큰은 JWT(HS512, 24시간 만료). `jwt.secret`은 `application.yml`에 개발용 기본값이 있고 `JWT_SECRET` 환경변수로 덮어쓸 수 있음 — 배포 전 반드시 교체.
 
 ### `POST /api/auth/register`
 
@@ -47,6 +49,8 @@
 { "id": 1, "email": "a@b.com", "nickname": "string" }
 ```
 
+이메일 중복 시 `400 INVALID_REQUEST` ("이미 가입된 이메일입니다.").
+
 ### `POST /api/auth/login`
 
 ```json
@@ -56,6 +60,8 @@
 // response 200
 { "accessToken": "jwt...", "user": { "id": 1, "nickname": "string" } }
 ```
+
+이메일 없음/비밀번호 불일치 모두 동일하게 `400 INVALID_REQUEST` ("이메일 또는 비밀번호가 올바르지 않습니다.") — 계정 존재 여부가 드러나지 않도록 메시지를 통일함.
 
 ---
 
@@ -131,7 +137,11 @@
 
 ---
 
-## SNS 기능 — 로그인 필요
+## SNS 기능 — 구현 완료 (좋아요/댓글), 로그인 필요
+
+`LikeController`/`CommentController` 실제 동작. `spotId`는 지금은 TourAPI 캐시 없이 문자열 그대로 받아서 저장하며, 실존 관광지인지 검증하지 않음(TourAPI 연동 후 `spots_cache` 기준으로 검증 추가 예정).
+
+**알려진 제약**: 인증 안 된 요청이 보호된 엔드포인트(좋아요/댓글 작성/삭제)에 오면 Spring Security 기본 동작으로 `403 Forbidden`(빈 본문)을 반환함 — 위 공통 에러 포맷(JSON body)이 아님. 401 + JSON 바디로 통일하려면 커스텀 `AuthenticationEntryPoint` 추가 필요(아직 미구현).
 
 ### `POST /api/spots/{id}/like`
 
@@ -161,7 +171,7 @@
 
 ### `DELETE /api/comments/{commentId}`
 
-응답 204, 본문 없음. 본인 댓글만 삭제 가능.
+응답 204, 본문 없음. 본인 댓글만 삭제 가능 — 아니면 `400 INVALID_REQUEST` ("본인 댓글만 삭제할 수 있습니다."). 존재하지 않는 댓글도 동일하게 400.
 
 ---
 
@@ -180,3 +190,4 @@
 ## 변경 이력
 
 - v1.0 (2026-07-13): 최초 작성.
+- v1.1 (2026-08-02): 인증(회원가입/로그인, JWT)과 좋아요·댓글 CRUD 실제 구현 완료. 미인증 요청의 403 처리 관련 알려진 제약 기록.
