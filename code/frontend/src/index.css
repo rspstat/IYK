@@ -2,7 +2,81 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* "Vibrant Chungbuk Pulse" 디자인 시스템 토큰 — 팔레트/폰트는 항상 이 값을 기준으로 사용 */
+@theme {
+  --font-headline: "Plus Jakarta Sans", "Segoe UI", sans-serif;
+  --font-body: "Be Vietnam Pro", "Segoe UI", sans-serif;
+
+  --color-primary-50: #fff5ee;
+  --color-primary-100: #ffe6d5;
+  --color-primary-200: #ffc9a3;
+  --color-primary-300: #ffa971;
+  --color-primary-400: #ff9151;
+  --color-primary-500: #ff7e36;
+  --color-primary-600: #e9631e;
+  --color-primary-700: #c14b14;
+  --color-primary-800: #97390f;
+  --color-primary-900: #6b280a;
+  --color-primary-950: #3d1605;
+
+  --color-secondary-50: #f0fdf4;
+  --color-secondary-100: #dcfce7;
+  --color-secondary-200: #bbf7d0;
+  --color-secondary-300: #86efac;
+  --color-secondary-400: #4ade80;
+  --color-secondary-500: #22c55e;
+  --color-secondary-600: #16a34a;
+  --color-secondary-700: #15803d;
+  --color-secondary-800: #166534;
+  --color-secondary-900: #14532d;
+  --color-secondary-950: #052e16;
+
+  --color-tertiary-50: #f0f9ff;
+  --color-tertiary-100: #e0f2fe;
+  --color-tertiary-200: #bae6fd;
+  --color-tertiary-300: #7dd3fc;
+  --color-tertiary-400: #3abef9;
+  --color-tertiary-500: #0ea5e9;
+  --color-tertiary-600: #0284c7;
+  --color-tertiary-700: #0369a1;
+  --color-tertiary-800: #075985;
+  --color-tertiary-900: #0c4a6e;
+  --color-tertiary-950: #082f49;
+
+  --color-neutral-50: #f4f5f5;
+  --color-neutral-100: #e5e7e7;
+  --color-neutral-200: #cdd1d1;
+  --color-neutral-300: #a9afaf;
+  --color-neutral-400: #7c8384;
+  --color-neutral-500: #5c6365;
+  --color-neutral-600: #454b4c;
+  --color-neutral-700: #363b3c;
+  --color-neutral-800: #2d3436;
+  --color-neutral-900: #1c2021;
+  --color-neutral-950: #0f1112;
+}
+
 body {
   margin: 0;
-  font-family: system-ui, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-body);
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-headline);
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-float {
+  animation: float 3.2s ease-in-out infinite;
 }

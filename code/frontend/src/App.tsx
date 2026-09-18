@@ -4,6 +4,9 @@ import MainPage from './pages/MainPage'
 import ResultPage from './pages/ResultPage'
 import SpotDetailPage from './pages/SpotDetailPage'
 import RoutePage from './pages/RoutePage'
+import LoginPage from './pages/LoginPage'
+import SignupPage from './pages/SignupPage'
+import FavoritesPage from './pages/FavoritesPage'
 
 function App() {
   return (
@@ -14,6 +17,9 @@ function App() {
           <Route path="/result/:mbti" element={<ResultPage />} />
           <Route path="/spot/:spotId" element={<SpotDetailPage />} />
           <Route path="/route" element={<RoutePage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/favorites" element={<FavoritesPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
