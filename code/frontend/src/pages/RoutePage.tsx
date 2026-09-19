@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   ArrowLeft,
   User,
@@ -20,6 +20,7 @@ import { MBTI_STYLES } from '../data/mbtiStyles'
 import { MOCK_SPOTS } from '../data/mockSpots'
 import { SPOT_GRADIENTS } from '../data/spotGradients'
 import { useTravelStore } from '../store/useTravelStore'
+import { useNavGuardStore } from '../store/useNavGuardStore'
 import { useRequireAuth } from '../hooks/useRequireAuth'
 import BottomNav from '../components/BottomNav'
 import type { Spot } from '../types'
@@ -92,6 +93,7 @@ function sortByNearestNeighbor(spots: Spot[]) {
 }
 
 export default function RoutePage() {
+  const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const mbtiParam = searchParams.get('mbti')?.toUpperCase()
   const style = MBTI_STYLES.find((s) => s.type === mbtiParam)
@@ -103,13 +105,16 @@ export default function RoutePage() {
   const removeFromRoute = useTravelStore((state) => state.removeFromRoute)
   const moveInRoute = useTravelStore((state) => state.moveInRoute)
   const setRouteOrder = useTravelStore((state) => state.setRouteOrder)
+  const clearRoute = useTravelStore((state) => state.clearRoute)
   const setActiveEditRouteId = useTravelStore((state) => state.setActiveEditRouteId)
   const saveCurrentRoute = useTravelStore((state) => state.saveCurrentRoute)
   const updateSavedRoute = useTravelStore((state) => state.updateSavedRoute)
+  const setNavGuard = useNavGuardStore((state) => state.setGuard)
   const requireAuth = useRequireAuth()
   const [saved, setSaved] = useState(false)
   const [savedName, setSavedName] = useState('')
   const [routeName, setRouteName] = useState('')
+  const [pendingNav, setPendingNav] = useState<string | null>(null)
 
   const editingRoute = editId ? savedRoutes.find((route) => route.id === editId) : undefined
 
@@ -142,6 +147,9 @@ export default function RoutePage() {
       : fallbackSpots
 
   const autoRouteName = generateRouteName(spots)
+  // 저장하지 않은 이동 경고는 "저장된 경로를 편집 중"일 때만 띄운다. 새 경로 만들기 화면은 기본적으로
+  // 미리보기 경로(fallbackSpots)가 항상 채워져 있어서, 편집 여부와 무관하게 매번 경고가 뜨는 걸 막기 위함.
+  const isDirty = Boolean(editId) && !saved && spots.length > 0
 
   function handleSortNearest() {
     if (spots.length < 2) return
@@ -149,13 +157,59 @@ export default function RoutePage() {
     setRouteOrder(ordered.map((spot) => spot.id))
   }
 
+  function performSave() {
+    const finalName = routeName.trim() || autoRouteName
+    const spotIds = spots.map((spot) => spot.id)
+    if (editId) {
+      updateSavedRoute(editId, spotIds, finalName)
+    } else {
+      saveCurrentRoute(spotIds, finalName)
+    }
+    setSavedName(finalName)
+    setSaved(true)
+    // 저장/수정이 끝나면 화면을 다시 초기 상태로 되돌려서, 다음에 들어올 때 방금 편집한 내용이 남아있지 않게 한다.
+    clearRoute()
+    setActiveEditRouteId(null)
+    setRouteName('')
+  }
+
+  // 저장하지 않은 변경 사항이 있는 동안 다른 화면(하단 내비게이션, 뒤로가기)으로 이동하려 하면
+  // 이 화면이 먼저 확인 창을 띄우고 이동을 직접 처리하도록 전역 가드에 등록해둔다.
+  useEffect(() => {
+    setNavGuard((to) => {
+      if (isDirty) {
+        setPendingNav(to)
+        return false
+      }
+      return true
+    })
+    return () => setNavGuard(null)
+  }, [isDirty, setNavGuard])
+
+  function attemptLeave(to: string) {
+    if (isDirty) {
+      setPendingNav(to)
+      return
+    }
+    navigate(to)
+  }
+
+  function handleSaveAndLeave() {
+    requireAuth(() => {
+      performSave()
+      const to = pendingNav
+      setPendingNav(null)
+      if (to) navigate(to)
+    })
+  }
+
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
       <div className="mx-auto max-w-md pb-24">
         <header className="flex items-center justify-between bg-white px-4 py-4 dark:bg-neutral-950">
-          <Link to="/" className="text-primary-800 dark:text-primary-400">
+          <button type="button" onClick={() => attemptLeave('/')} className="text-primary-800 dark:text-primary-400">
             <ArrowLeft className="h-5 w-5" strokeWidth={2.4} />
-          </Link>
+          </button>
           <h1 className="font-headline text-lg font-bold text-primary-800 dark:text-primary-400">
             여행 경로 확인
           </h1>
@@ -342,19 +396,7 @@ export default function RoutePage() {
             <button
               type="button"
               disabled={saved || spots.length === 0}
-              onClick={() =>
-                requireAuth(() => {
-                  const finalName = routeName.trim() || autoRouteName
-                  const spotIds = spots.map((spot) => spot.id)
-                  if (editId) {
-                    updateSavedRoute(editId, spotIds, finalName)
-                  } else {
-                    saveCurrentRoute(spotIds, finalName)
-                  }
-                  setSavedName(finalName)
-                  setSaved(true)
-                })
-              }
+              onClick={() => requireAuth(performSave)}
               className={`flex flex-1 items-center justify-center gap-2 rounded-full py-3 text-sm font-bold shadow-sm transition disabled:opacity-40 ${
                 saved ? 'bg-secondary-400 text-neutral-900' : 'bg-primary-800 text-white hover:bg-primary-900'
               }`}
@@ -378,6 +420,35 @@ export default function RoutePage() {
           </div>
         </div>
       </div>
+
+      {pendingNav && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-6">
+          <div className="w-full max-w-xs rounded-2xl bg-white p-5 text-center shadow-xl dark:bg-neutral-900">
+            <p className="font-headline text-base font-bold text-neutral-900 dark:text-neutral-50">
+              저장하지 않은 변경 사항이 있어요
+            </p>
+            <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+              지금 나가면 {editId ? '수정' : '저장'}한 내용이 사라져요. 계속 편집하시겠어요?
+            </p>
+            <div className="mt-4 flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={handleSaveAndLeave}
+                className="rounded-full bg-primary-800 py-2.5 text-sm font-bold text-white transition hover:bg-primary-900"
+              >
+                저장하고 이동하기
+              </button>
+              <button
+                type="button"
+                onClick={() => setPendingNav(null)}
+                className="rounded-full bg-neutral-100 py-2.5 text-sm font-bold text-neutral-700 transition hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
+              >
+                계속 편집하기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <BottomNav />
     </div>
