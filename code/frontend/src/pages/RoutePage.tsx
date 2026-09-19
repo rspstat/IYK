@@ -232,7 +232,8 @@ export default function RoutePage() {
           spots={toMapSpots(spots)}
           showRoute
           numbered
-          labels="always"
+          // 지점이 많으면 이름표끼리 겹쳐 읽을 수 없으니, 5곳까지만 항상 보여주고 그 이상은 마커를 눌렀을 때만 보여준다.
+          labels={spots.length <= 5 ? 'always' : 'onSelect'}
           className="h-[340px] w-full"
           fallback={
         <div className="relative h-[340px] w-full overflow-hidden bg-gradient-to-br from-secondary-100 via-secondary-50 to-tertiary-100 dark:from-secondary-950/40 dark:via-neutral-900 dark:to-tertiary-950/40">

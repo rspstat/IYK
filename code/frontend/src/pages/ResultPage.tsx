@@ -124,7 +124,7 @@ export default function ResultPage() {
             <KakaoMap
               spots={toMapSpots(spots)}
               numbered
-              className="h-56 rounded-xl"
+              className="h-72 rounded-xl"
               onSelectSpot={(id) => navigate(`/spot/${id}`)}
               fallback={
                 <ApiPendingPlaceholder
