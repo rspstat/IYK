@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware'
 
 export interface SavedRoute {
   id: string
+  name: string
   createdAt: number
   spotIds: string[]
 }
@@ -11,6 +12,7 @@ interface TravelState {
   likedSpotIds: string[]
   likedAt: Record<string, number>
   routeSpotIds: string[]
+  activeEditRouteId: string | null
   savedRoutes: SavedRoute[]
   toggleLike: (id: string) => void
   addToRoute: (id: string) => void
@@ -18,7 +20,10 @@ interface TravelState {
   moveInRoute: (id: string, direction: 'up' | 'down') => void
   setRouteOrder: (spotIds: string[]) => void
   clearRoute: () => void
-  saveCurrentRoute: (spotIds: string[]) => void
+  setActiveEditRouteId: (id: string | null) => void
+  saveCurrentRoute: (spotIds: string[], name?: string) => void
+  updateSavedRoute: (id: string, spotIds: string[], name?: string) => void
+  deleteSavedRoute: (id: string) => void
 }
 
 export const useTravelStore = create<TravelState>()(
@@ -27,6 +32,7 @@ export const useTravelStore = create<TravelState>()(
       likedSpotIds: [],
       likedAt: {},
       routeSpotIds: [],
+      activeEditRouteId: null,
       savedRoutes: [],
       toggleLike: (id) =>
         set((state) => {
@@ -62,12 +68,26 @@ export const useTravelStore = create<TravelState>()(
         }),
       setRouteOrder: (spotIds) => set({ routeSpotIds: spotIds }),
       clearRoute: () => set({ routeSpotIds: [] }),
-      saveCurrentRoute: (spotIds) =>
+      setActiveEditRouteId: (id) => set({ activeEditRouteId: id }),
+      saveCurrentRoute: (spotIds, name) => {
+        const createdAt = Date.now()
+        const fallbackName = `${new Date(createdAt).getMonth() + 1}월 ${new Date(createdAt).getDate()}일 여행 코스`
         set((state) => ({
           savedRoutes: [
             ...state.savedRoutes,
-            { id: `route-${Date.now()}`, createdAt: Date.now(), spotIds },
+            { id: `route-${createdAt}`, name: name?.trim() || fallbackName, createdAt, spotIds },
           ],
+        }))
+      },
+      updateSavedRoute: (id, spotIds, name) =>
+        set((state) => ({
+          savedRoutes: state.savedRoutes.map((route) =>
+            route.id === id ? { ...route, spotIds, name: name?.trim() || route.name } : route,
+          ),
+        })),
+      deleteSavedRoute: (id) =>
+        set((state) => ({
+          savedRoutes: state.savedRoutes.filter((route) => route.id !== id),
         })),
     }),
     { name: 'iyk-travel' },

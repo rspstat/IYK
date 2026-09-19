@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   ArrowLeft,
   User,
@@ -32,6 +32,8 @@ function recommendedTypeFor(category: MbtiCategory) {
 
 export default function FavoritesPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const returnTo = searchParams.get('returnTo') || '/route'
   const isLoggedIn = useAuthStore((state) => state.user !== null)
 
   const likedSpotIds = useTravelStore((state) => state.likedSpotIds)
@@ -39,6 +41,7 @@ export default function FavoritesPage() {
   const toggleLike = useTravelStore((state) => state.toggleLike)
   const routeSpotIds = useTravelStore((state) => state.routeSpotIds)
   const addToRoute = useTravelStore((state) => state.addToRoute)
+  const removeFromRoute = useTravelStore((state) => state.removeFromRoute)
 
   const [filterCategory, setFilterCategory] = useState<MbtiCategory | 'all'>('all')
   const [selectedIds, setSelectedIds] = useState<string[]>(() => likedSpotIds)
@@ -85,7 +88,7 @@ export default function FavoritesPage() {
   function buildRouteFromSelection() {
     if (selectedIds.length === 0) return
     selectedIds.forEach((id) => addToRoute(id))
-    navigate('/route')
+    navigate(returnTo)
   }
 
   return (
@@ -262,8 +265,7 @@ export default function FavoritesPage() {
                         </span>
                         <button
                           type="button"
-                          onClick={() => addToRoute(spot.id)}
-                          disabled={inRoute}
+                          onClick={() => (inRoute ? removeFromRoute(spot.id) : addToRoute(spot.id))}
                           className={`flex items-center gap-0.5 text-xs font-bold ${
                             inRoute ? 'text-secondary-500' : 'text-primary-600 hover:underline dark:text-primary-400'
                           }`}

@@ -20,10 +20,10 @@ export default function BottomNav() {
 
   function goToMyPage() {
     if (!isLoggedIn) {
-      navigate(`/login?redirect=${encodeURIComponent('/')}`)
+      navigate(`/login?redirect=${encodeURIComponent('/mypage')}`)
       return
     }
-    navigate('/')
+    navigate('/mypage')
   }
 
   return (
@@ -33,7 +33,11 @@ export default function BottomNav() {
           <Home className="h-5 w-5" strokeWidth={2} />
           <span className="text-[11px] font-semibold">Home</span>
         </Link>
-        <button type="button" className={`flex flex-col items-center gap-0.5 ${inactiveClass}`}>
+        <button
+          type="button"
+          onClick={() => navigate('/search')}
+          className={`flex flex-col items-center gap-0.5 ${pathname === '/search' ? activeClass : inactiveClass}`}
+        >
           <Search className="h-5 w-5" strokeWidth={2} />
           <span className="text-[11px]">Search</span>
         </button>
@@ -45,7 +49,11 @@ export default function BottomNav() {
           <Heart className="h-5 w-5" strokeWidth={2} fill={pathname === '/favorites' ? 'currentColor' : 'none'} />
           <span className="text-[11px] font-semibold">Favorites</span>
         </button>
-        <button type="button" onClick={goToMyPage} className={`flex flex-col items-center gap-0.5 ${inactiveClass}`}>
+        <button
+          type="button"
+          onClick={goToMyPage}
+          className={`flex flex-col items-center gap-0.5 ${pathname === '/mypage' ? activeClass : inactiveClass}`}
+        >
           <User className="h-5 w-5" strokeWidth={2} />
           <span className="text-[11px]">My Page</span>
         </button>

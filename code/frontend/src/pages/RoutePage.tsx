@@ -13,6 +13,8 @@ import {
   ArrowUp,
   ArrowDown,
   X,
+  Pencil,
+  Plus,
 } from 'lucide-react'
 import { MBTI_STYLES } from '../data/mbtiStyles'
 import { MOCK_SPOTS } from '../data/mockSpots'
@@ -60,6 +62,14 @@ function estimateTravel(a: Spot, b: Spot) {
   return { distanceLabel: `${km.toFixed(1)}km`, timeLabel: `${minutes}분` }
 }
 
+// 별명을 입력하지 않았을 때 담긴 명소 이름을 바탕으로 자연스러운 기본 이름을 만들어준다.
+function generateRouteName(spots: Spot[]) {
+  if (spots.length === 0) return '나의 여행 코스'
+  if (spots.length === 1) return `${spots[0].name} 코스`
+  if (spots.length === 2) return `${spots[0].name} · ${spots[1].name} 코스`
+  return `${spots[0].name} 외 ${spots.length - 1}곳 코스`
+}
+
 // 첫 스팟에서 시작해 매번 가장 가까운 곳을 다음 목적지로 고르는 최근접 이웃 정렬
 function sortByNearestNeighbor(spots: Spot[]) {
   if (spots.length < 2) return spots
@@ -85,31 +95,53 @@ export default function RoutePage() {
   const [searchParams] = useSearchParams()
   const mbtiParam = searchParams.get('mbti')?.toUpperCase()
   const style = MBTI_STYLES.find((s) => s.type === mbtiParam)
+  const editId = searchParams.get('editId')
 
   const routeSpotIds = useTravelStore((state) => state.routeSpotIds)
+  const activeEditRouteId = useTravelStore((state) => state.activeEditRouteId)
+  const savedRoutes = useTravelStore((state) => state.savedRoutes)
   const removeFromRoute = useTravelStore((state) => state.removeFromRoute)
   const moveInRoute = useTravelStore((state) => state.moveInRoute)
   const setRouteOrder = useTravelStore((state) => state.setRouteOrder)
+  const setActiveEditRouteId = useTravelStore((state) => state.setActiveEditRouteId)
   const saveCurrentRoute = useTravelStore((state) => state.saveCurrentRoute)
+  const updateSavedRoute = useTravelStore((state) => state.updateSavedRoute)
   const requireAuth = useRequireAuth()
   const [saved, setSaved] = useState(false)
+  const [savedName, setSavedName] = useState('')
+  const [routeName, setRouteName] = useState('')
+
+  const editingRoute = editId ? savedRoutes.find((route) => route.id === editId) : undefined
 
   const fallbackSpots = style
     ? MOCK_SPOTS.filter((spot) => spot.category === style.category).slice(0, 3)
     : MOCK_SPOTS.slice(0, 3)
 
-  // routeSpotIds가 비어있으면(경로에 아무것도 안 담고 곧장 들어온 경우) 미리보기 목록을 실제 경로로 반영해서
-  // 이후 빼기·순서변경·정렬이 바로 동작하게 만든다.
+  // editId로 처음 들어온 경우에만 저장해둔 경로를 편집 대상으로 불러온다. activeEditRouteId로 "같은 편집 세션"인지
+  // 구분해서, 명소 추가하기 → 찜한 여행지 → 다시 이 페이지로 돌아오는 흐름에서 방금 추가한 명소가 저장된 옛 목록으로
+  // 덮어써지지 않게 한다. editId가 없는 새 경로 만들기 흐름에서는 routeSpotIds가 비어있을 때만 미리보기 목록을 채운다.
   useEffect(() => {
-    if (routeSpotIds.length === 0 && fallbackSpots.length > 0) {
-      setRouteOrder(fallbackSpots.map((spot) => spot.id))
+    if (editingRoute) {
+      if (activeEditRouteId !== editId) {
+        setRouteOrder(editingRoute.spotIds)
+        setRouteName(editingRoute.name)
+        setActiveEditRouteId(editId)
+      }
+    } else if (!editId) {
+      if (activeEditRouteId !== null) setActiveEditRouteId(null)
+      if (routeSpotIds.length === 0 && fallbackSpots.length > 0) {
+        setRouteOrder(fallbackSpots.map((spot) => spot.id))
+      }
     }
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editId])
 
   const spots =
     routeSpotIds.length > 0
       ? (routeSpotIds.map((id) => MOCK_SPOTS.find((spot) => spot.id === id)).filter(Boolean) as Spot[])
       : fallbackSpots
+
+  const autoRouteName = generateRouteName(spots)
 
   function handleSortNearest() {
     if (spots.length < 2) return
@@ -195,6 +227,14 @@ export default function RoutePage() {
               {style ? `${style.type} 맞춤 경로` : '맞춤 경로'}
             </span>
           </div>
+
+          <Link
+            to={`/search?returnTo=${encodeURIComponent(editId ? `/route?editId=${editId}` : '/route')}`}
+            className="mt-3 flex items-center justify-center gap-1.5 rounded-full border border-dashed border-primary-300 py-2.5 text-xs font-bold text-primary-700 transition hover:bg-primary-50 dark:border-primary-800 dark:text-primary-400 dark:hover:bg-primary-950/30"
+          >
+            <Plus className="h-3.5 w-3.5" strokeWidth={2.4} />
+            경로에 명소 추가하기
+          </Link>
 
           {spots.length === 0 ? (
             <div className="mt-6 flex flex-col items-center rounded-2xl bg-neutral-50 p-6 text-center dark:bg-neutral-800/40">
@@ -285,13 +325,33 @@ export default function RoutePage() {
             </div>
           )}
 
-          <div className="mt-5 flex gap-2">
+          {!saved && spots.length > 0 && (
+            <label className="mt-5 flex items-center gap-2 rounded-xl border border-neutral-200 px-4 py-3 dark:border-neutral-700">
+              <Pencil className="h-4 w-4 shrink-0 text-neutral-400" strokeWidth={2} />
+              <input
+                type="text"
+                value={routeName}
+                onChange={(e) => setRouteName(e.target.value)}
+                placeholder={`경로 별명 (예: ${autoRouteName})`}
+                className="w-full bg-transparent text-sm text-neutral-900 outline-none placeholder:text-neutral-400 dark:text-neutral-50"
+              />
+            </label>
+          )}
+
+          <div className="mt-3 flex gap-2">
             <button
               type="button"
               disabled={saved || spots.length === 0}
               onClick={() =>
                 requireAuth(() => {
-                  saveCurrentRoute(spots.map((spot) => spot.id))
+                  const finalName = routeName.trim() || autoRouteName
+                  const spotIds = spots.map((spot) => spot.id)
+                  if (editId) {
+                    updateSavedRoute(editId, spotIds, finalName)
+                  } else {
+                    saveCurrentRoute(spotIds, finalName)
+                  }
+                  setSavedName(finalName)
                   setSaved(true)
                 })
               }
@@ -300,7 +360,11 @@ export default function RoutePage() {
               }`}
             >
               {saved ? <Check className="h-4 w-4" strokeWidth={2.2} /> : <Save className="h-4 w-4" strokeWidth={2.2} />}
-              {saved ? '저장 완료' : '경로 저장하기'}
+              {saved
+                ? `'${savedName}' ${editId ? '수정' : '저장'} 완료`
+                : editId
+                  ? '경로 수정하기'
+                  : '경로 저장하기'}
             </button>
             <button
               type="button"
