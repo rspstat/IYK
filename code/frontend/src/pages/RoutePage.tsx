@@ -22,7 +22,9 @@ import { useNavGuardStore } from '../store/useNavGuardStore'
 import { useRequireAuth } from '../hooks/useRequireAuth'
 import { useSpotsByIds } from '../hooks/useSpotsByIds'
 import BottomNav from '../components/BottomNav'
+import KakaoMap from '../components/KakaoMap'
 import SpotImage from '../components/SpotImage'
+import { toMapSpots } from '../lib/kakaoMap'
 import { pickImage } from '../data/spotImage'
 import type { Spot } from '../types'
 
@@ -225,6 +227,14 @@ export default function RoutePage() {
           </div>
         </header>
 
+        {/* 카카오 지도(키가 있을 때). 키가 없거나 불러오지 못하면 실제 좌표로 그린 약식 지도를 대신 보여준다. */}
+        <KakaoMap
+          spots={toMapSpots(spots)}
+          showRoute
+          numbered
+          labels="always"
+          className="h-[340px] w-full"
+          fallback={
         <div className="relative h-[340px] w-full overflow-hidden bg-gradient-to-br from-secondary-100 via-secondary-50 to-tertiary-100 dark:from-secondary-950/40 dark:via-neutral-900 dark:to-tertiary-950/40">
           <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 h-full w-full">
             <polyline
@@ -272,9 +282,11 @@ export default function RoutePage() {
           </div>
 
           <span className="absolute bottom-2 left-2 rounded-full bg-white/80 px-2 py-0.5 text-[10px] text-neutral-500 dark:bg-neutral-900/80 dark:text-neutral-400">
-            카카오 지도 연동 예정
+            약식 지도 · 카카오 지도 키를 설정하면 실제 지도로 표시돼요
           </span>
         </div>
+          }
+        />
 
         <div className="relative -mt-6 rounded-t-3xl bg-white px-5 pb-5 pt-5 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] dark:bg-neutral-900">
           <div className="flex items-center justify-between">

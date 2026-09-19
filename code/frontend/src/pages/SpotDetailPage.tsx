@@ -14,6 +14,8 @@ import {
   PawPrint,
   Accessibility,
   Info,
+  Navigation,
+  ExternalLink,
 } from 'lucide-react'
 import { ApiError, getErrorMessage } from '../api/client'
 import { spotApi, type Congestion } from '../api/spots'
@@ -26,7 +28,9 @@ import { useRequireAuth } from '../hooks/useRequireAuth'
 import { useApiData } from '../hooks/useApiData'
 import BottomNav from '../components/BottomNav'
 import CongestionBadge from '../components/CongestionBadge'
+import KakaoMap from '../components/KakaoMap'
 import SpotComments from '../components/SpotComments'
+import { hasKakaoMapKey, kakaoMapRouteUrl, kakaoMapViewUrl, toMapSpots } from '../lib/kakaoMap'
 import SpotImage from '../components/SpotImage'
 import { pickImage } from '../data/spotImage'
 import type { CongestionLevel } from '../types'
@@ -316,6 +320,34 @@ export default function SpotDetailPage() {
                 </a>
               </div>
             )}
+          </div>
+        </section>
+
+        <section className="mx-5 mt-4 rounded-2xl bg-white p-4 shadow-sm dark:bg-neutral-900">
+          <h2 className="font-headline text-sm font-bold text-neutral-900 dark:text-neutral-50">위치</h2>
+          {hasKakaoMapKey && (
+            <KakaoMap spots={toMapSpots([spot])} className="mt-3 h-44 rounded-xl" fallback={null} />
+          )}
+          {/* 아래 링크는 카카오 지도 키 없이도 동작한다(카카오맵 웹/앱으로 이동) */}
+          <div className="mt-3 flex gap-2">
+            <a
+              href={kakaoMapViewUrl(toMapSpots([spot])[0])}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-full border border-neutral-200 py-2.5 text-xs font-bold text-neutral-700 transition hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800"
+            >
+              <ExternalLink className="h-3.5 w-3.5" strokeWidth={2.2} />
+              카카오맵에서 보기
+            </a>
+            <a
+              href={kakaoMapRouteUrl(toMapSpots([spot])[0])}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-primary-800 py-2.5 text-xs font-bold text-white transition hover:bg-primary-900"
+            >
+              <Navigation className="h-3.5 w-3.5" strokeWidth={2.2} />
+              길찾기
+            </a>
           </div>
         </section>
 

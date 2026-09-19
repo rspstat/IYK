@@ -20,8 +20,11 @@ import { useTravelStore } from '../store/useTravelStore'
 import { useSpotStore } from '../store/useSpotStore'
 import { useRequireAuth } from '../hooks/useRequireAuth'
 import { useApiData } from '../hooks/useApiData'
+import ApiPendingPlaceholder from '../components/ApiPendingPlaceholder'
 import BottomNav from '../components/BottomNav'
 import CongestionBadge from '../components/CongestionBadge'
+import KakaoMap from '../components/KakaoMap'
+import { toMapSpots } from '../lib/kakaoMap'
 import SpotImage from '../components/SpotImage'
 import { pickImage } from '../data/spotImage'
 
@@ -117,13 +120,20 @@ export default function ResultPage() {
             </div>
             <Maximize2 className="h-4 w-4 text-neutral-400 dark:text-neutral-500" strokeWidth={2} />
           </div>
-          <div className="relative mt-3 flex h-36 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-secondary-100 via-secondary-50 to-tertiary-100 dark:from-secondary-950/40 dark:via-neutral-900 dark:to-tertiary-950/40">
-            <MapPin className="absolute left-8 top-6 h-6 w-6 text-primary-600" strokeWidth={2} fill="currentColor" fillOpacity={0.15} />
-            <MapPin className="absolute right-10 top-10 h-7 w-7 text-primary-600" strokeWidth={2} fill="currentColor" fillOpacity={0.15} />
-            <MapPin className="absolute bottom-6 left-1/3 h-6 w-6 text-primary-600" strokeWidth={2} fill="currentColor" fillOpacity={0.15} />
-            <span className="absolute bottom-2 right-2 rounded-full bg-white/80 px-2 py-0.5 text-[10px] text-neutral-500 dark:bg-neutral-900/80 dark:text-neutral-400">
-              지도 연동 예정
-            </span>
+          <div className="mt-3">
+            <KakaoMap
+              spots={toMapSpots(spots)}
+              numbered
+              className="h-56 rounded-xl"
+              onSelectSpot={(id) => navigate(`/spot/${id}`)}
+              fallback={
+                <ApiPendingPlaceholder
+                  apiName="카카오 지도"
+                  description="VITE_KAKAO_MAP_KEY 를 설정하면 추천 명소가 지도에 표시돼요"
+                  className="h-36"
+                />
+              }
+            />
           </div>
         </section>
 
