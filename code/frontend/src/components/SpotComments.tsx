@@ -27,7 +27,7 @@ function formatRelativeTime(value: string) {
 
 // 관광지 후기(댓글). 목록 조회는 누구나, 작성·삭제는 로그인한 사용자(삭제는 본인 글만).
 // 부모가 key={spotId}로 렌더링해서 관광지가 바뀌면 상태가 초기화된다.
-export default function SpotComments({ spotId }: { spotId: string }) {
+export default function SpotComments({ spotId, className = 'mt-7 px-5' }: { spotId: string; className?: string }) {
   const location = useLocation()
   const user = useAuthStore((state) => state.user)
   const [comments, setComments] = useState<Comment[] | null>(null)
@@ -82,7 +82,7 @@ export default function SpotComments({ spotId }: { spotId: string }) {
   const loginPath = `/login?redirect=${encodeURIComponent(`${location.pathname}${location.search}`)}`
 
   return (
-    <section className="mt-7 px-5">
+    <section className={className}>
       <h2 className="font-headline mb-3 text-base font-bold text-neutral-900 dark:text-neutral-50">
         여행자 후기
         {comments && <span className="ml-1.5 text-primary-600 dark:text-primary-400">{comments.length}</span>}
