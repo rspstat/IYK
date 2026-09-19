@@ -1,0 +1,76 @@
+import { useLocation, useNavigate } from 'react-router-dom'
+import { Home, Search, Heart, User } from 'lucide-react'
+import { useAuthStore } from '../store/useAuthStore'
+import { useNavGuardStore } from '../store/useNavGuardStore'
+
+export default function BottomNav() {
+  const navigate = useNavigate()
+  const { pathname } = useLocation()
+  const isLoggedIn = useAuthStore((state) => state.user !== null)
+
+  const activeClass = 'text-primary-500 dark:text-primary-400'
+  const inactiveClass = 'text-neutral-400 dark:text-neutral-500'
+
+  // 저장하지 않은 편집 내용이 있는 화면(예: 경로 수정 중)에 있다면 그 화면이 등록한 가드가
+  // 먼저 확인 UI를 띄우고 이동을 처리하므로, 가드가 없거나 통과를 허락할 때만 실제로 이동한다.
+  function go(to: string) {
+    const guard = useNavGuardStore.getState().guard
+    if (guard && !guard(to)) return
+    navigate(to)
+  }
+
+  function goToFavorites() {
+    if (!isLoggedIn) {
+      go(`/login?redirect=${encodeURIComponent('/favorites')}`)
+      return
+    }
+    go('/favorites')
+  }
+
+  function goToMyPage() {
+    if (!isLoggedIn) {
+      go(`/login?redirect=${encodeURIComponent('/mypage')}`)
+      return
+    }
+    go('/mypage')
+  }
+
+  return (
+    <nav className="fixed inset-x-0 bottom-0 z-10 border-t border-neutral-100 bg-white dark:border-neutral-800 dark:bg-neutral-950">
+      <div className="mx-auto flex max-w-md items-center justify-between px-8 py-2.5 sm:max-w-xl md:max-w-2xl lg:max-w-3xl">
+        <button
+          type="button"
+          onClick={() => go('/')}
+          className={`flex flex-col items-center gap-0.5 ${pathname === '/' ? activeClass : inactiveClass}`}
+        >
+          <Home className="h-5 w-5" strokeWidth={2} />
+          <span className="text-[11px] font-semibold">Home</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => go('/search')}
+          className={`flex flex-col items-center gap-0.5 ${pathname === '/search' ? activeClass : inactiveClass}`}
+        >
+          <Search className="h-5 w-5" strokeWidth={2} />
+          <span className="text-[11px]">Search</span>
+        </button>
+        <button
+          type="button"
+          onClick={goToFavorites}
+          className={`flex flex-col items-center gap-0.5 ${pathname === '/favorites' ? activeClass : inactiveClass}`}
+        >
+          <Heart className="h-5 w-5" strokeWidth={2} fill={pathname === '/favorites' ? 'currentColor' : 'none'} />
+          <span className="text-[11px] font-semibold">Favorites</span>
+        </button>
+        <button
+          type="button"
+          onClick={goToMyPage}
+          className={`flex flex-col items-center gap-0.5 ${pathname === '/mypage' ? activeClass : inactiveClass}`}
+        >
+          <User className="h-5 w-5" strokeWidth={2} />
+          <span className="text-[11px]">My Page</span>
+        </button>
+      </div>
+    </nav>
+  )
+}

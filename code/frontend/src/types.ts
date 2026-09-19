@@ -18,4 +18,5 @@ export interface Spot {
   category: MbtiCategory
   congestion: CongestionLevel
   summary: string
+  coords: { lat: number; lng: number }
 }

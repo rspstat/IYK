@@ -1,5 +1,6 @@
 import type { Spot } from '../types'
 
+// coords는 경로 정렬(가까운 순) 계산용 대략적인 위경도입니다 — 실제 방문 시엔 지도 API 좌표로 교체 예정
 export const MOCK_SPOTS: Spot[] = [
   {
     id: 'danyang-manchonha',
@@ -8,6 +9,7 @@ export const MOCK_SPOTS: Spot[] = [
     category: 'activity',
     congestion: 'high',
     summary: '남한강 절경을 내려다보는 스카이워크와 짚라인 체험.',
+    coords: { lat: 36.9848, lng: 128.3655 },
   },
   {
     id: 'goesan-sanmakigil',
@@ -16,6 +18,7 @@ export const MOCK_SPOTS: Spot[] = [
     category: 'activity',
     congestion: 'medium',
     summary: '괴산호를 따라 걷는 트레킹 코스와 출렁다리.',
+    coords: { lat: 36.8151, lng: 127.9245 },
   },
   {
     id: 'jecheon-cheongpung-cablecar',
@@ -24,6 +27,7 @@ export const MOCK_SPOTS: Spot[] = [
     category: 'activity',
     congestion: 'medium',
     summary: '청풍호를 가로지르는 케이블카에서 즐기는 액티비티.',
+    coords: { lat: 37.0125, lng: 128.1928 },
   },
   {
     id: 'jecheon-resom-forest',
@@ -32,6 +36,7 @@ export const MOCK_SPOTS: Spot[] = [
     category: 'wellness',
     congestion: 'low',
     summary: '한방 테마 스파와 산림 속 힐링 프로그램.',
+    coords: { lat: 37.07, lng: 128.17 },
   },
   {
     id: 'chungju-suanbo-hotspring',
@@ -40,6 +45,7 @@ export const MOCK_SPOTS: Spot[] = [
     category: 'wellness',
     congestion: 'low',
     summary: '천년 역사를 가진 온천에서 여유로운 휴식.',
+    coords: { lat: 36.8319, lng: 127.9525 },
   },
   {
     id: 'danyang-dodamsambong',
@@ -48,6 +54,7 @@ export const MOCK_SPOTS: Spot[] = [
     category: 'nature',
     congestion: 'medium',
     summary: '남한강 위 세 봉우리가 만드는 대표 절경.',
+    coords: { lat: 36.9897, lng: 128.3657 },
   },
   {
     id: 'jecheon-uirimji',
@@ -56,6 +63,7 @@ export const MOCK_SPOTS: Spot[] = [
     category: 'nature',
     congestion: 'low',
     summary: '삼한시대부터 이어진 저수지와 소나무 숲길.',
+    coords: { lat: 37.1362, lng: 128.2011 },
   },
   {
     id: 'okcheon-busodamak',
@@ -64,6 +72,7 @@ export const MOCK_SPOTS: Spot[] = [
     category: 'nature',
     congestion: 'low',
     summary: '대청호 물길이 감싸는 한적한 절벽 산책로.',
+    coords: { lat: 36.3273, lng: 127.5716 },
   },
   {
     id: 'chungju-gyemyeongsan',
@@ -72,6 +81,7 @@ export const MOCK_SPOTS: Spot[] = [
     category: 'family',
     congestion: 'low',
     summary: '반려동물 동반이 가능한 숲속 산책로와 휴양시설.',
+    coords: { lat: 36.9908, lng: 127.9346 },
   },
   {
     id: 'cheongju-musimcheon',
@@ -80,6 +90,7 @@ export const MOCK_SPOTS: Spot[] = [
     category: 'family',
     congestion: 'medium',
     summary: '무장애 데크길이 잘 갖춰진 가족 나들이 코스.',
+    coords: { lat: 36.6357, lng: 127.489 },
   },
   {
     id: 'chungju-tangeumdae',
@@ -88,6 +99,7 @@ export const MOCK_SPOTS: Spot[] = [
     category: 'culture',
     congestion: 'medium',
     summary: '신립 장군의 역사가 서린 명승지이자 소나무 숲.',
+    coords: { lat: 36.9756, lng: 127.9077 },
   },
   {
     id: 'boeun-beopjusa',
@@ -96,6 +108,7 @@ export const MOCK_SPOTS: Spot[] = [
     category: 'culture',
     congestion: 'high',
     summary: '천년고찰과 국내 최대 미륵대불이 있는 사찰.',
+    coords: { lat: 36.5411, lng: 127.7986 },
   },
   {
     id: 'cheongju-sangdangsanseong',
@@ -104,6 +117,7 @@ export const MOCK_SPOTS: Spot[] = [
     category: 'culture',
     congestion: 'low',
     summary: '조선시대 축조된 산성을 따라 걷는 역사 산책로.',
+    coords: { lat: 36.6089, lng: 127.5245 },
   },
   {
     id: 'jincheon-nongdari',
@@ -112,5 +126,6 @@ export const MOCK_SPOTS: Spot[] = [
     category: 'culture',
     congestion: 'low',
     summary: '천년을 버틴 국내 최고(最古)의 돌다리.',
+    coords: { lat: 36.8203, lng: 127.4652 },
   },
 ]
