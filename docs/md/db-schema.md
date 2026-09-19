@@ -1,4 +1,4 @@
-# DB 스키마 (v1.2)
+# DB 스키마 (v1.3)
 
 - 작성일: 2026-07-13
 - 담당: 내부 로직. 실제 JPA 엔티티는 `code/backend/src/main/java/com/iyk/backend/domain/`에 구현되어 있으며, 이 문서는 그 스키마를 사람이 읽기 쉽게 정리한 것입니다. 엔티티와 문서 중 하나를 바꾸면 반드시 다른 쪽도 맞춰주세요.
@@ -9,6 +9,7 @@
 ```
 users (1) ──< likes >── (1) spots_cache
 users (1) ──< comments >── (1) spots_cache
+users (1) ──── (0..1) user_profile_images
 ```
 
 `spots_cache`는 TourAPI 원본 데이터를 캐싱하는 테이블이라 FK 제약은 애플리케이션 레벨에서만 관리합니다(외부 API 장애 시에도 좋아요/댓글 자체는 남아 있어야 하므로 DB FK로 강하게 묶지 않음).
@@ -27,6 +28,16 @@ users (1) ──< comments >── (1) spots_cache
 | | | UNIQUE(provider, provider_id) | 같은 카카오 계정이 계정 두 개로 갈라지는 것을 막는다 |
 
 **기존 DB 이전 시 주의(v1.2):** 개발용 H2 는 재시작하면 새로 만들어져 문제없지만, 이미 운영 중인 MySQL 이라면 `ddl-auto: update`가 기존 컬럼의 NOT NULL 을 풀어주지 않는다. 카카오 로그인을 켜기 전에 `ALTER TABLE users MODIFY email VARCHAR(255) NULL, MODIFY password_hash VARCHAR(255) NULL;`를 직접 실행해야 한다.
+
+## user_profile_images
+
+| 컬럼 | 타입 | 제약 | 설명 |
+|---|---|---|---|
+| user_id | BIGINT | PK | `users.id` (앱 레벨 참조). 사용자당 한 장 |
+| data_url | CLOB / LONGTEXT | NOT NULL | 프로필 사진의 `data:image/jpeg;base64,…` 문자열(프론트가 256×256 으로 줄여 보내며 서버 상한 150KB) |
+| updated_at | TIMESTAMP | | |
+
+사진 파일 저장소(S3 등) 없이 동작하게 하려고 DB 에 문자열로 넣었다. 댓글 조회 등에서 `users` 를 읽을 때 이미지가 딸려오지 않도록 `users` 와 분리했다. 나중에 사진을 많이 쓰게 되면 파일 저장소 + URL 저장 방식으로 바꾼다.
 
 ## spots_cache
 
@@ -102,3 +113,4 @@ TourAPI 국문관광정보 + 특화 API 응답을 서버 시작 시와 매일 �
 - v1.0 (2026-07-13): 최초 작성.
 - v1.1 (2026-09-19): TourAPI 실연동에 맞춰 `spots_cache` 컬럼 확장(시군구 코드·썸네일·전화·반려동물/무장애 플래그·상세 캐시)과 `congestion_forecast` 테이블 추가. area_code 를 법정동 코드(43)로 정정.
 - v1.2 (2026-09-19): 카카오 로그인 지원을 위해 `users.email`·`password_hash` NULL 허용, `provider`·`provider_id` 와 UNIQUE(provider, provider_id) 추가.
+- v1.3 (2026-09-19): 프로필 사진용 `user_profile_images` 테이블 추가.

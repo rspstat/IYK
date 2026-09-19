@@ -54,7 +54,19 @@ export const authApi = {
     request<LoginResponse>('/auth/kakao', { method: 'POST', body: { code, redirectUri } }),
 }
 
+export interface MeResponse {
+  id: number
+  email: string | null
+  nickname: string
+  profileImage: string | null
+}
+
 export const userApi = {
+  me: () => request<MeResponse>('/me', { auth: true }),
+  // 프로필 사진(jpeg/png/webp 의 data URL, 서버 상한 150KB). 사용자당 한 장이라 다시 올리면 교체된다.
+  setProfileImage: (image: string) =>
+    request<{ profileImage: string }>('/me/profile-image', { method: 'PUT', body: { image }, auth: true }),
+  removeProfileImage: () => request<void>('/me/profile-image', { method: 'DELETE', auth: true }),
   // 닉네임 변경. 서버가 앞뒤 공백을 지운 값을 돌려준다.
   changeNickname: (nickname: string) =>
     request<LoginResponse['user']>('/me/nickname', { method: 'PUT', body: { nickname }, auth: true }),

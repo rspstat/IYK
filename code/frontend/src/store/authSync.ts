@@ -1,6 +1,6 @@
 // 앱 시작 시 main.tsx가 한 번 import한다(부수효과 전용 모듈).
 // - API 클라이언트에 로그인 토큰 조회와 401 처리를 연결한다.
-// - 로그인 상태가 바뀌면 찜 목록을 서버 기준으로 맞춘다.
+// - 로그인 상태가 바뀌면 찜 목록과 내 정보(프로필 사진 등)를 서버 기준으로 맞춘다.
 import { configureApi } from '../api/client'
 import { likeApi } from '../api/endpoints'
 import { useAuthStore } from './useAuthStore'
@@ -25,10 +25,16 @@ async function syncLikes() {
 
 useAuthStore.subscribe((state, previous) => {
   if (state.token === previous.token) return
-  if (state.token) void syncLikes()
-  else useTravelStore.getState().resetLikes()
+  if (state.token) {
+    void syncLikes()
+    void useAuthStore.getState().refreshProfile()
+  } else useTravelStore.getState().resetLikes()
 })
 
 // 새로고침한 경우: 로그인 상태면 서버 기준으로 다시 맞추고, 로그아웃 상태면 남아있는 찜 캐시를 비운다.
-if (useAuthStore.getState().token) void syncLikes()
-else useTravelStore.getState().resetLikes()
+if (useAuthStore.getState().token) {
+  void syncLikes()
+  void useAuthStore.getState().refreshProfile()
+} else {
+  useTravelStore.getState().resetLikes()
+}

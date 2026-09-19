@@ -2,6 +2,7 @@ package com.iyk.backend;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -11,6 +12,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.iyk.backend.domain.user.UserService;
+import java.util.Base64;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +21,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 
 /** docs/md/api-spec.md 의 에러 포맷과 인증·좋아요·댓글 계약을 검증한다. */
 @SpringBootTest
@@ -187,6 +191,94 @@ class ApiContractTests {
 
         mvc.perform(get("/api/spots/" + spot + "/comments"))
                 .andExpect(jsonPath("$.comments[0].author", is("새이름")));
+    }
+
+    private static String dataUrl(String mime, byte[] header, int totalBytes) {
+        byte[] bytes = new byte[totalBytes];
+        System.arraycopy(header, 0, bytes, 0, header.length);
+        return "data:image/" + mime + ";base64," + Base64.getEncoder().encodeToString(bytes);
+    }
+
+    private ResultActions putImage(Session session, String image) throws Exception {
+        String body = objectMapper.writeValueAsString(java.util.Map.of("image", image));
+        return mvc.perform(
+                put("/api/me/profile-image")
+                        .header("Authorization", bearer(session))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body));
+    }
+
+    @Test
+    void meReturnsProfileAndProfileImageCanBeSetReplacedAndRemoved() throws Exception {
+        mvc.perform(get("/api/me")).andExpect(status().isUnauthorized());
+        mvc.perform(put("/api/me/profile-image").contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isUnauthorized());
+
+        Session me = signUpAndLogin("사진주인");
+        mvc.perform(get("/api/me").header("Authorization", bearer(me)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id", is((int) me.userId())))
+                .andExpect(jsonPath("$.nickname", is("사진주인")))
+                .andExpect(jsonPath("$.email").isNotEmpty())
+                .andExpect(jsonPath("$.profileImage").value(nullValue()));
+
+        String jpeg = dataUrl("jpeg", new byte[] {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0}, 2000);
+        putImage(me, jpeg).andExpect(status().isOk()).andExpect(jsonPath("$.profileImage", is(jpeg)));
+        mvc.perform(get("/api/me").header("Authorization", bearer(me)))
+                .andExpect(jsonPath("$.profileImage", is(jpeg)));
+
+        // 교체: 사용자당 한 장
+        String png = dataUrl("png", new byte[] {(byte) 0x89, 'P', 'N', 'G'}, 500);
+        putImage(me, png).andExpect(status().isOk());
+        String webp = dataUrl("webp", new byte[] {'R', 'I', 'F', 'F', 0, 0, 0, 0, 'W', 'E', 'B', 'P'}, 500);
+        putImage(me, webp).andExpect(status().isOk());
+        mvc.perform(get("/api/me").header("Authorization", bearer(me)))
+                .andExpect(jsonPath("$.profileImage", is(webp)));
+
+        // 다른 사용자에게는 영향이 없다
+        Session other = signUpAndLogin("남");
+        mvc.perform(get("/api/me").header("Authorization", bearer(other)))
+                .andExpect(jsonPath("$.profileImage").value(nullValue()));
+
+        mvc.perform(delete("/api/me/profile-image").header("Authorization", bearer(me)))
+                .andExpect(status().isNoContent());
+        mvc.perform(get("/api/me").header("Authorization", bearer(me)))
+                .andExpect(jsonPath("$.profileImage").value(nullValue()));
+        // 이미 없어도 오류가 아니다
+        mvc.perform(delete("/api/me/profile-image").header("Authorization", bearer(me)))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void invalidProfileImagesAreRejectedWith400() throws Exception {
+        Session me = signUpAndLogin("검증");
+        byte[] jpegHeader = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF};
+        String[] bad = {
+            "",
+            "not a data url",
+            "data:text/html;base64," + Base64.getEncoder().encodeToString("<script>alert(1)</script>".getBytes()),
+            "data:image/svg+xml;base64," + Base64.getEncoder().encodeToString("<svg/>".getBytes()),
+            "data:image/jpeg;base64,@@@not-base64@@@",
+            // 형식을 속인 경우: png 라고 하면서 내용은 jpeg
+            "data:image/png;base64," + Base64.getEncoder().encodeToString(new byte[] {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, 0}),
+            // 용량 초과(150KB)
+            dataUrl("jpeg", jpegHeader, UserService.PROFILE_IMAGE_MAX_BYTES + 1),
+        };
+        for (String image : bad) {
+            putImage(me, image)
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.error.code", is("INVALID_REQUEST")));
+        }
+        mvc.perform(
+                        put("/api/me/profile-image")
+                                .header("Authorization", bearer(me))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{}"))
+                .andExpect(status().isBadRequest());
+        // 상한과 같은 크기는 통과
+        putImage(me, dataUrl("jpeg", jpegHeader, UserService.PROFILE_IMAGE_MAX_BYTES)).andExpect(status().isOk());
+        // 거절된 요청들은 저장된 사진을 건드리지 않는다
+        mvc.perform(get("/api/me").header("Authorization", bearer(me))).andExpect(jsonPath("$.profileImage").isNotEmpty());
     }
 
     @Test

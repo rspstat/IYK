@@ -1,4 +1,4 @@
-# API 명세서 (v1.6)
+# API 명세서 (v1.7)
 
 - 작성일: 2026-07-13
 - 회의록(2026-07-05)에서 합의한 대로, 이 문서가 확정되기 전까지는 프론트엔드/백엔드 어느 쪽도 응답 필드명을 임의로 바꾸지 않습니다. 변경이 필요하면 이 문서를 먼저 고치고 팀에 공유합니다.
@@ -118,6 +118,29 @@ OAuth 인가 코드 방식이다. 서버가 카카오와 통신하고(클라이�
 - 처음 로그인하면 계정을 만들고, 이미 있으면 그 계정으로 로그인한다. 계정은 카카오 회원번호로만 구분하며, **이메일은 받지 않는다**(이메일로 가입한 계정과 자동으로 합치지 않는다).
 - 닉네임은 카카오가 주면 그것을, 안 주면 `카카오사용자` + 회원번호 끝 4자리를 쓴다. 재로그인해도 닉네임을 덮어쓰지 않는다.
 - 인가 코드가 만료됐거나 이미 썼거나 `redirectUri`가 다르면 `400 INVALID_REQUEST`("카카오 로그인 인증에 실패했어요…"), 카카오 서버 문제면 `502 KAKAO_ERROR`.
+
+### `GET /api/me` — 로그인 필요 (v1.7)
+내 정보. 프론트가 로그인할 때·새로고침할 때·마이페이지에 들어올 때 불러 저장된 표시 정보(이메일·닉네임·프로필 사진)를 서버 기준으로 맞춘다.
+```json
+// response 200
+{ "id": 7, "email": "a@b.com", "nickname": "길동", "profileImage": "data:image/jpeg;base64,..." }
+```
+카카오 계정은 `email`이 `null`, 프로필 사진이 없으면 `profileImage`가 `null`.
+
+### `PUT /api/me/profile-image` — 로그인 필요 (v1.7)
+프로필 사진을 저장한다(사용자당 한 장, 다시 올리면 교체). 별도 파일 저장소 없이 data URL 문자열 그대로 DB에 넣는다.
+```json
+// request
+{ "image": "data:image/jpeg;base64,/9j/4AAQ..." }
+
+// response 200
+{ "profileImage": "data:image/jpeg;base64,/9j/4AAQ..." }
+```
+- `image`는 `data:image/jpeg|png|webp;base64,…` 형식이어야 하고 디코딩한 크기가 **150KB 이하**여야 한다. 선언한 형식과 실제 파일 내용(매직 바이트)이 다르거나 SVG·HTML 등 다른 형식이면 `400 INVALID_REQUEST`.
+- 프론트는 사용자가 고른 사진을 가운데 기준 정사각형으로 잘라 **256×256 JPEG**로 줄여서 보낸다(보통 20~30KB).
+
+### `DELETE /api/me/profile-image` — 로그인 필요 (v1.7)
+프로필 사진을 지운다. 응답 `204`. 원래 없어도 `204`.
 
 ### `PUT /api/me/nickname` — 로그인 필요 (v1.6)
 마이페이지에서 닉네임을 바꾼다. 이메일·카카오 계정 모두 쓸 수 있다. (CORS 허용 메서드가 PUT 까지라 PATCH 대신 PUT)
@@ -313,3 +336,4 @@ OAuth 인가 코드 방식이다. 서버가 카카오와 통신하고(클라이�
 - v1.4 (2026-09-19): TourAPI 실연동. 추천·상세·연관·혼잡도·경로를 목데이터에서 실데이터(충북 관광지 약 1,300곳)로 교체. `Spot.congestion`이 `null` 가능(예측 정보 없음), `thumbnailUrl` 추가, 상세에 `tel`·`petFriendly`·`barrierFree` 추가, `GET /api/spots?ids=`·`GET /api/spots/search` 추가, 에러 코드 `SPOT_NOT_FOUND`·`DATA_NOT_READY`·`UPSTREAM_ERROR` 추가. 혼잡도 등급 기준(33/58)과 관광지 id 체계 명시.
 - v1.5 (2026-09-19): 카카오 로그인 추가(`GET /api/auth/providers`, `GET /api/auth/kakao/login-url`, `POST /api/auth/kakao`). 카카오 계정은 이메일 없이 가입되며 `users`에 `provider`·`provider_id` 추가. 에러 코드 `KAKAO_NOT_CONFIGURED`·`KAKAO_ERROR`.
 - v1.6 (2026-09-19): 닉네임 수정 `PUT /api/me/nickname` 추가(마이페이지 연필 버튼). 이미 쓴 댓글의 작성자명에도 바로 반영.
+- v1.7 (2026-09-19): 프로필 사진 `PUT·DELETE /api/me/profile-image`, 내 정보 `GET /api/me` 추가(마이페이지 프로필 메뉴).

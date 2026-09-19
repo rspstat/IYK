@@ -2,7 +2,6 @@ import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
   MapPin,
-  User,
   ClipboardList,
   HeartHandshake,
   Sparkles,
@@ -24,10 +23,12 @@ import {
 import { spotApi } from '../api/spots'
 import { useTravelStore } from '../store/useTravelStore'
 import { useSpotStore } from '../store/useSpotStore'
+import { useAuthStore } from '../store/useAuthStore'
 import { useRequireAuth } from '../hooks/useRequireAuth'
 import { useApiData } from '../hooks/useApiData'
 import BottomNav from '../components/BottomNav'
 import SpotImage from '../components/SpotImage'
+import ProfileAvatar from '../components/ProfileAvatar'
 import { pickImage } from '../data/spotImage'
 
 // 16개 유형을 표준 4x4 그리드 순서(IS·IN / ES·EN x J/P)로 배치
@@ -89,6 +90,7 @@ export default function MainPage() {
   const likedSpotIds = useTravelStore((state) => state.likedSpotIds)
   const toggleLike = useTravelStore((state) => state.toggleLike)
   const requireAuth = useRequireAuth()
+  const profileImage = useAuthStore((state) => state.user?.profileImage)
   const rememberSpots = useSpotStore((state) => state.remember)
   const featured = useApiData(() => spotApi.recommendations(FEATURED_TYPE), 'home')
   const featuredSpots = featured.data?.spots ?? []
@@ -109,9 +111,13 @@ export default function MainPage() {
           <Link
             to="/mypage"
             aria-label="마이페이지"
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 text-neutral-400 transition hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-500 dark:hover:bg-neutral-700"
+            className="rounded-full transition hover:opacity-80"
           >
-            <User className="h-5 w-5" strokeWidth={2} />
+            <ProfileAvatar
+              image={profileImage}
+              className="h-9 w-9 bg-neutral-100 text-neutral-400 dark:bg-neutral-800 dark:text-neutral-500"
+              iconClassName="h-5 w-5"
+            />
           </Link>
         </header>
 

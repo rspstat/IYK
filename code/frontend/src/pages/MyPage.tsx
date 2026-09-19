@@ -1,11 +1,14 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
-import { ArrowLeft, User, MapPin, Trash2, Waypoints, ChevronRight, Compass, Pencil, Check, X } from 'lucide-react'
+import { ArrowLeft, MapPin, Trash2, Waypoints, ChevronRight, Compass, Pencil, Check, X } from 'lucide-react'
 import { getErrorMessage } from '../api/client'
 import { useTravelStore } from '../store/useTravelStore'
 import { useAuthStore } from '../store/useAuthStore'
 import { useSpotsByIds } from '../hooks/useSpotsByIds'
+import { makeProfileImage, ProfileImageError } from '../lib/profileImage'
 import BottomNav from '../components/BottomNav'
+import ProfileAvatar from '../components/ProfileAvatar'
+import ProfileMenu from '../components/ProfileMenu'
 
 function formatSavedDate(timestamp: number) {
   const d = new Date(timestamp)
@@ -19,12 +22,23 @@ export default function MyPage() {
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
   const changeNickname = useAuthStore((state) => state.changeNickname)
+  const changeProfileImage = useAuthStore((state) => state.changeProfileImage)
+  const refreshProfile = useAuthStore((state) => state.refreshProfile)
+  const logout = useAuthStore((state) => state.logout)
   const isLoggedIn = user !== null
 
   const [editingNickname, setEditingNickname] = useState(false)
   const [nicknameDraft, setNicknameDraft] = useState('')
   const [nicknameSaving, setNicknameSaving] = useState(false)
   const [nicknameError, setNicknameError] = useState<string | null>(null)
+  const [photoBusy, setPhotoBusy] = useState(false)
+  const [photoError, setPhotoError] = useState<string | null>(null)
+  const [loggingOut, setLoggingOut] = useState(false)
+
+  // 다른 기기에서 바꾼 사진·닉네임도 보이도록 들어올 때마다 서버 값으로 맞춘다.
+  useEffect(() => {
+    void refreshProfile()
+  }, [refreshProfile])
 
   const savedRoutes = useTravelStore((state) => state.savedRoutes)
   const deleteSavedRoute = useTravelStore((state) => state.deleteSavedRoute)
@@ -40,6 +54,8 @@ export default function MyPage() {
   const spotsById = useMemo(() => new Map(knownSpots.map((spot) => [spot.id, spot])), [knownSpots])
 
   if (!isLoggedIn) {
+    // 로그아웃해서 비로그인이 된 경우에는 로그인 화면이 아니라 홈으로 가야 하므로 리다이렉트하지 않는다.
+    if (loggingOut) return null
     return <Navigate to={`/login?redirect=${encodeURIComponent('/mypage')}`} replace />
   }
 
@@ -79,6 +95,27 @@ export default function MyPage() {
     }
   }
 
+  // next 가 null 이면 프로필 사진 삭제, File 이면 줄여서 올린다.
+  async function updatePhoto(next: File | null) {
+    if (photoBusy) return
+    setPhotoBusy(true)
+    setPhotoError(null)
+    try {
+      await changeProfileImage(next === null ? null : await makeProfileImage(next))
+    } catch (err) {
+      setPhotoError(err instanceof ProfileImageError ? err.message : getErrorMessage(err))
+    } finally {
+      setPhotoBusy(false)
+    }
+  }
+
+  function handleLogout() {
+    // 로그아웃하면 이 페이지의 "로그인 필요" 리다이렉트가 동작하므로, 표시를 해 두고 홈으로 보낸다.
+    setLoggingOut(true)
+    navigate('/', { replace: true })
+    logout()
+  }
+
   function handleView(routeId: string) {
     navigate(`/route?editId=${routeId}`)
   }
@@ -95,16 +132,22 @@ export default function MyPage() {
               마이페이지
             </span>
           </div>
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 text-neutral-400 dark:bg-neutral-800 dark:text-neutral-500">
-            <User className="h-5 w-5" strokeWidth={2} />
-          </div>
+          <ProfileMenu
+            image={user.profileImage}
+            busy={photoBusy}
+            onPickFile={(file) => void updatePhoto(file)}
+            onRemove={() => void updatePhoto(null)}
+            onLogout={handleLogout}
+          />
         </header>
 
         <section className="px-5 pt-4">
           <div className="flex items-center gap-3 rounded-2xl bg-white p-5 shadow-sm dark:bg-neutral-900">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary-50 text-primary-600 dark:bg-primary-950/40 dark:text-primary-400">
-              <User className="h-6 w-6" strokeWidth={2.2} />
-            </div>
+            <ProfileAvatar
+              image={user.profileImage}
+              className={`h-12 w-12 shrink-0 bg-primary-50 text-primary-600 dark:bg-primary-950/40 dark:text-primary-400 ${photoBusy ? 'opacity-60' : ''}`}
+              iconClassName="h-6 w-6"
+            />
             <div className="min-w-0 flex-1">
               {editingNickname ? (
                 <form
@@ -168,6 +211,11 @@ export default function MyPage() {
               <p className="mt-0.5 text-xs text-neutral-400 dark:text-neutral-500">{user.email ?? '카카오 계정으로 로그인'}</p>
             </div>
           </div>
+          {photoError && (
+            <p role="alert" className="mt-2 px-1 text-xs font-medium text-primary-600 dark:text-primary-400">
+              {photoError}
+            </p>
+          )}
         </section>
 
         <section className="mt-5 px-5">
