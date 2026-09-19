@@ -1,6 +1,10 @@
 spring:
   application:
     name: backend
+  config:
+    # code/backend/.env 가 있으면 KEY=VALUE 줄을 프로퍼티로 읽는다(없어도 무시). 비밀값을 커밋하지 않기 위한 용도.
+    # .env.example 참고. 같은 이름의 OS 환경변수로 대신 지정해도 된다.
+    import: optional:file:.env[.properties]
   datasource:
     url: jdbc:h2:mem:iyk;MODE=MySQL
     driver-class-name: org.h2.Driver
@@ -23,6 +27,10 @@ server:
   error:
     # Spring DevTools가 개발 모드에서 켜는 include-stacktrace=always 기본값을 명시적으로 덮어쓴다.
     include-stacktrace: never
+
+tourapi:
+  # 공공데이터포털(data.go.kr)에서 발급한 한국관광공사 OpenAPI 일반 인증키. Encoding/Decoding 어느 쪽을 넣어도 된다.
+  service-key: ${TOURAPI_SERVICE_KEY:}
 
 jwt:
   # 개발용 기본값입니다. 배포 전 반드시 환경변수(JWT_SECRET)로 교체하세요.

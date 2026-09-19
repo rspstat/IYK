@@ -35,3 +35,6 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### 비밀값 (커밋 금지: TourAPI 서비스키 등) ###
+.env
