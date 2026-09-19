@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -117,6 +118,75 @@ class ApiContractTests {
         mvc.perform(get("/api/me/likes").header("Authorization", bearer(me)))
                 .andExpect(jsonPath("$.likes", hasSize(1)))
                 .andExpect(jsonPath("$.likes[0].spotId", is(spotA)));
+    }
+
+    @Test
+    void nicknameChangeRequiresLoginTrimsAndValidates() throws Exception {
+        mvc.perform(put("/api/me/nickname").contentType(MediaType.APPLICATION_JSON).content("{\"nickname\":\"x\"}"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error.code", is("UNAUTHORIZED")));
+
+        Session me = signUpAndLogin("before");
+        mvc.perform(
+                        put("/api/me/nickname")
+                                .header("Authorization", bearer(me))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"nickname\":\"  새 닉네임  \"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id", is((int) me.userId())))
+                .andExpect(jsonPath("$.nickname", is("새 닉네임")));
+
+        // 빈 값·공백뿐·누락·21자 초과는 400, 기존 닉네임은 그대로
+        for (String body :
+                new String[] {
+                    "{\"nickname\":\"\"}",
+                    "{\"nickname\":\"    \"}",
+                    "{}",
+                    "{\"nickname\":\"" + "가".repeat(21) + "\"}",
+                    "{\"nickname\":\"a\\nb\"}"
+                }) {
+            mvc.perform(
+                            put("/api/me/nickname")
+                                    .header("Authorization", bearer(me))
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(body))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.error.code", is("INVALID_REQUEST")));
+        }
+        mvc.perform(
+                        put("/api/me/nickname")
+                                .header("Authorization", bearer(me))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"nickname\":\"" + "가".repeat(20) + "\"}"))
+                .andExpect(status().isOk());
+        mvc.perform(
+                        put("/api/me/nickname")
+                                .header("Authorization", bearer(me))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"nickname\":\"새 닉네임\"}"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void nicknameChangeShowsUpOnExistingComments() throws Exception {
+        Session me = signUpAndLogin("옛이름");
+        String spot = "spot-" + UUID.randomUUID();
+        mvc.perform(
+                        post("/api/spots/" + spot + "/comments")
+                                .header("Authorization", bearer(me))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"content\":\"good\"}"))
+                .andExpect(status().isCreated());
+
+        mvc.perform(
+                        put("/api/me/nickname")
+                                .header("Authorization", bearer(me))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"nickname\":\"새이름\"}"))
+                .andExpect(status().isOk());
+
+        mvc.perform(get("/api/spots/" + spot + "/comments"))
+                .andExpect(jsonPath("$.comments[0].author", is("새이름")));
     }
 
     @Test

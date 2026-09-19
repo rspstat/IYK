@@ -1,6 +1,7 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
-import { ArrowLeft, User, MapPin, Trash2, Waypoints, ChevronRight, Compass } from 'lucide-react'
+import { ArrowLeft, User, MapPin, Trash2, Waypoints, ChevronRight, Compass, Pencil, Check, X } from 'lucide-react'
+import { getErrorMessage } from '../api/client'
 import { useTravelStore } from '../store/useTravelStore'
 import { useAuthStore } from '../store/useAuthStore'
 import { useSpotsByIds } from '../hooks/useSpotsByIds'
@@ -11,10 +12,19 @@ function formatSavedDate(timestamp: number) {
   return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')} 저장`
 }
 
+// 서버(UserService.NICKNAME_MAX_LENGTH)와 같은 값이어야 한다.
+const NICKNAME_MAX_LENGTH = 20
+
 export default function MyPage() {
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
+  const changeNickname = useAuthStore((state) => state.changeNickname)
   const isLoggedIn = user !== null
+
+  const [editingNickname, setEditingNickname] = useState(false)
+  const [nicknameDraft, setNicknameDraft] = useState('')
+  const [nicknameSaving, setNicknameSaving] = useState(false)
+  const [nicknameError, setNicknameError] = useState<string | null>(null)
 
   const savedRoutes = useTravelStore((state) => state.savedRoutes)
   const deleteSavedRoute = useTravelStore((state) => state.deleteSavedRoute)
@@ -31,6 +41,42 @@ export default function MyPage() {
 
   if (!isLoggedIn) {
     return <Navigate to={`/login?redirect=${encodeURIComponent('/mypage')}`} replace />
+  }
+
+  function startEditNickname() {
+    setNicknameDraft(user!.nickname)
+    setNicknameError(null)
+    setEditingNickname(true)
+  }
+
+  function cancelEditNickname() {
+    if (nicknameSaving) return
+    setEditingNickname(false)
+    setNicknameError(null)
+  }
+
+  async function saveNickname() {
+    if (nicknameSaving) return
+    const next = nicknameDraft.trim()
+    if (next === '') {
+      setNicknameError('닉네임을 입력해주세요.')
+      return
+    }
+    // 바뀐 게 없으면 서버에 보내지 않고 닫는다.
+    if (next === user!.nickname) {
+      setEditingNickname(false)
+      return
+    }
+    setNicknameSaving(true)
+    setNicknameError(null)
+    try {
+      await changeNickname(next)
+      setEditingNickname(false)
+    } catch (err) {
+      setNicknameError(getErrorMessage(err))
+    } finally {
+      setNicknameSaving(false)
+    }
   }
 
   function handleView(routeId: string) {
@@ -59,11 +105,67 @@ export default function MyPage() {
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary-50 text-primary-600 dark:bg-primary-950/40 dark:text-primary-400">
               <User className="h-6 w-6" strokeWidth={2.2} />
             </div>
-            <div>
-              <p className="font-headline text-base font-bold text-neutral-900 dark:text-neutral-50">
-                {user.nickname}
-              </p>
-              <p className="text-xs text-neutral-400 dark:text-neutral-500">{user.email ?? '카카오 계정으로 로그인'}</p>
+            <div className="min-w-0 flex-1">
+              {editingNickname ? (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    void saveNickname()
+                  }}
+                  className="flex items-center gap-1.5"
+                >
+                  <input
+                    type="text"
+                    autoFocus
+                    value={nicknameDraft}
+                    maxLength={NICKNAME_MAX_LENGTH}
+                    disabled={nicknameSaving}
+                    aria-label="닉네임"
+                    onChange={(e) => setNicknameDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') cancelEditNickname()
+                    }}
+                    className="min-w-0 flex-1 rounded-lg border border-neutral-200 bg-transparent px-2.5 py-1.5 font-headline text-base font-bold text-neutral-900 outline-none focus:border-primary-600 dark:border-neutral-700 dark:text-neutral-50"
+                  />
+                  <button
+                    type="submit"
+                    disabled={nicknameSaving}
+                    aria-label="닉네임 저장"
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-800 text-white transition hover:bg-primary-900 disabled:opacity-50"
+                  >
+                    <Check className="h-4 w-4" strokeWidth={2.4} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={cancelEditNickname}
+                    disabled={nicknameSaving}
+                    aria-label="닉네임 수정 취소"
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-500 hover:bg-neutral-200 disabled:opacity-50 dark:bg-neutral-800 dark:text-neutral-400"
+                  >
+                    <X className="h-4 w-4" strokeWidth={2.4} />
+                  </button>
+                </form>
+              ) : (
+                <div className="flex items-center gap-1.5">
+                  <p className="truncate font-headline text-base font-bold text-neutral-900 dark:text-neutral-50">
+                    {user.nickname}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={startEditNickname}
+                    aria-label="닉네임 수정"
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-600 dark:text-neutral-500 dark:hover:bg-neutral-800 dark:hover:text-neutral-300"
+                  >
+                    <Pencil className="h-3.5 w-3.5" strokeWidth={2.2} />
+                  </button>
+                </div>
+              )}
+              {nicknameError && (
+                <p role="alert" className="mt-1 text-xs font-medium text-primary-600 dark:text-primary-400">
+                  {nicknameError}
+                </p>
+              )}
+              <p className="mt-0.5 text-xs text-neutral-400 dark:text-neutral-500">{user.email ?? '카카오 계정으로 로그인'}</p>
             </div>
           </div>
         </section>

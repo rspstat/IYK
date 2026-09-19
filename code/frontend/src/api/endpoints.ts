@@ -54,6 +54,12 @@ export const authApi = {
     request<LoginResponse>('/auth/kakao', { method: 'POST', body: { code, redirectUri } }),
 }
 
+export const userApi = {
+  // 닉네임 변경. 서버가 앞뒤 공백을 지운 값을 돌려준다.
+  changeNickname: (nickname: string) =>
+    request<LoginResponse['user']>('/me/nickname', { method: 'PUT', body: { nickname }, auth: true }),
+}
+
 export const likeApi = {
   toggle: (spotId: string) => request<LikeResult>(`${spotPath(spotId)}/like`, { method: 'POST', auth: true }),
   mine: () => request<{ likes: MyLike[] }>('/me/likes', { auth: true }),

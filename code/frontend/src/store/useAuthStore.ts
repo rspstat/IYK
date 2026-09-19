@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { authApi } from '../api/endpoints'
+import { authApi, userApi } from '../api/endpoints'
 
 interface AuthUser {
   id: number
@@ -17,6 +17,8 @@ interface AuthState {
   signup: (email: string, password: string, nickname: string) => Promise<void>
   // 카카오가 리다이렉트로 돌려준 인가 코드로 로그인한다(처음이면 서버가 계정을 만든다).
   loginWithKakao: (code: string, redirectUri: string) => Promise<void>
+  // 서버에 닉네임을 바꾸고 로그인 정보에도 반영한다. 실패하면 ApiError를 throw한다.
+  changeNickname: (nickname: string) => Promise<void>
   logout: () => void
 }
 
@@ -38,6 +40,12 @@ export const useAuthStore = create<AuthState>()(
       loginWithKakao: async (code, redirectUri) => {
         const { accessToken, user } = await authApi.kakaoLogin(code, redirectUri)
         set({ token: accessToken, user: { id: user.id, email: null, nickname: user.nickname } })
+      },
+      changeNickname: async (nickname) => {
+        const updated = await userApi.changeNickname(nickname)
+        const current = get().user
+        // 요청 중에 로그아웃했으면 반영할 계정이 없다.
+        if (current) set({ user: { ...current, nickname: updated.nickname } })
       },
       logout: () => set({ user: null, token: null }),
     }),

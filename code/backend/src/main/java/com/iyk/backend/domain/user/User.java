@@ -48,4 +48,8 @@ public class User {
     private String providerId;
 
     private LocalDateTime createdAt;
+
+    public void changeNickname(String nickname) {
+        this.nickname = nickname;
+    }
 }

@@ -32,7 +32,7 @@ export function configureApi(next: ApiConfig) {
 }
 
 interface RequestOptions {
-  method?: 'GET' | 'POST' | 'DELETE'
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE'
   body?: unknown
   // true면 로그인 토큰을 Authorization 헤더에 싣는다.
   auth?: boolean
