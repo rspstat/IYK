@@ -18,7 +18,7 @@ export default function Layout() {
         <header className="border-b border-gray-100 dark:border-gray-800">
           <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
             <Link to="/" className="flex items-center gap-1 text-sm font-bold tracking-tight">
-              <img src="/icon.png" alt="" className="h-7 w-7 rounded-lg" />
+              <img src="/logo.png" alt="" className="h-7 w-7 rounded-lg" />
               여행가유
             </Link>
             <ThemeToggle />
