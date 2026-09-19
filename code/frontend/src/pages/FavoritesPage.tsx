@@ -203,7 +203,6 @@ export default function FavoritesPage() {
             <section className="flex flex-col gap-4 px-5 py-3">
               {visibleSpots.map((spot) => {
                 const congestion = CONGESTION_META[spot.congestion]
-                const CategoryIcon = CATEGORY_ICON[spot.category]
                 const recommendedType = recommendedTypeFor(spot.category)
                 const selected = selectedIds.includes(spot.id)
                 const inRoute = routeSpotIds.includes(spot.id)

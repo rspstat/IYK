@@ -41,7 +41,8 @@ export default function ResultPage() {
   const spots = MOCK_SPOTS.filter((spot) => spot.category === style.category)
   const CategoryIcon = CATEGORY_ICON[style.category]
 
-  function handleAddRoute() {
+  // 함수 선언은 호이스팅돼서 위의 `if (!style) return` 타입 좁히기가 이어지지 않으므로 화살표 함수로 둔다.
+  const handleAddRoute = () => {
     requireAuth(() => {
       setRouteOrder(spots.map((spot) => spot.id))
       navigate(`/route?mbti=${style.type}`)

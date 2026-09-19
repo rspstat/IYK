@@ -81,7 +81,6 @@ export default function SpotDetailPage() {
   const liked = likedSpotIds.includes(spot.id)
   const inRoute = routeSpotIds.includes(spot.id)
   const congestion = CONGESTION_META[spot.congestion]
-  const CategoryIcon = CATEGORY_ICON[spot.category]
 
   const recommendedTypes = MBTI_STYLES.filter((s) => s.category === spot.category)
     .slice(0, 2)
