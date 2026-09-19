@@ -105,9 +105,14 @@ export default function MainPage() {
             <MapPin className="h-4 w-4" strokeWidth={2} />
             <span className="text-sm font-bold">Chungbuk MBTI Tour</span>
           </div>
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 text-neutral-400 dark:bg-neutral-800 dark:text-neutral-500">
+          {/* 비로그인이면 마이페이지가 로그인 화면으로 보냈다가(redirect) 로그인 후 다시 마이페이지로 돌아온다. */}
+          <Link
+            to="/mypage"
+            aria-label="마이페이지"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 text-neutral-400 transition hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-500 dark:hover:bg-neutral-700"
+          >
             <User className="h-5 w-5" strokeWidth={2} />
-          </div>
+          </Link>
         </header>
 
         <section className="flex flex-col items-center px-5 pb-3 pt-2 text-center">
