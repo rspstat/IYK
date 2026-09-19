@@ -24,7 +24,9 @@ import ApiPendingPlaceholder from '../components/ApiPendingPlaceholder'
 import BottomNav from '../components/BottomNav'
 import CongestionBadge from '../components/CongestionBadge'
 import KakaoMap from '../components/KakaoMap'
+import ShareButton from '../components/ShareButton'
 import { toMapSpots } from '../lib/kakaoMap'
+import type { SharePayload } from '../lib/share'
 import SpotImage from '../components/SpotImage'
 import { pickImage } from '../data/spotImage'
 
@@ -61,6 +63,18 @@ export default function ResultPage() {
 
   const spots = data?.spots ?? []
   const CategoryIcon = CATEGORY_ICON[style.category]
+
+  // 공유 카드: 추천 상위 3곳의 이름과 첫 번째 관광지 사진
+  const topNames = spots.slice(0, 3).map((spot) => spot.name)
+  const sharePayload: SharePayload = {
+    title: `${style.type} ${style.title}의 충북 여행지`,
+    description:
+      topNames.length > 0
+        ? `${topNames.join(', ')}${spots.length > 3 ? ` 외 ${spots.length - 3}곳` : ''} 추천`
+        : `${style.type}에게 어울리는 충북 여행지를 찾아보세요`,
+    imageUrl: spots[0] ? pickImage(spots[0], 'full') : null,
+    path: `/result/${style.type}`,
+  }
 
   // 함수 선언은 호이스팅돼서 위의 `if (!style) return` 타입 좁히기가 이어지지 않으므로 화살표 함수로 둔다.
   const handleAddRoute = () => {
@@ -147,13 +161,13 @@ export default function ResultPage() {
             <RouteIcon className="h-4 w-4" strokeWidth={2.2} />
             {spots.length}개 경로 담기
           </button>
-          <button
-            type="button"
+          <ShareButton
+            payload={sharePayload}
             className="flex w-full items-center justify-center gap-2 rounded-full bg-primary-500 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-primary-600"
           >
             <Share2 className="h-4 w-4" strokeWidth={2.2} />
             친구에게 결과 공유하기
-          </button>
+          </ShareButton>
         </div>
 
         <section className="mt-7 px-5">

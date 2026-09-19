@@ -29,8 +29,10 @@ import { useApiData } from '../hooks/useApiData'
 import BottomNav from '../components/BottomNav'
 import CongestionBadge from '../components/CongestionBadge'
 import KakaoMap from '../components/KakaoMap'
+import ShareButton from '../components/ShareButton'
 import SpotComments from '../components/SpotComments'
 import { hasKakaoMapKey, kakaoMapRouteUrl, kakaoMapViewUrl, toMapSpots } from '../lib/kakaoMap'
+import type { SharePayload } from '../lib/share'
 import SpotImage from '../components/SpotImage'
 import { pickImage } from '../data/spotImage'
 import type { CongestionLevel } from '../types'
@@ -204,6 +206,12 @@ export default function SpotDetailPage() {
   const CategoryIcon = CATEGORY_ICON[spot.category]
   const photos = spot.photos.length > 0 ? spot.photos : [pickImage(spot, 'full')].filter((url): url is string => Boolean(url))
   const introduction = spot.description ?? spot.summary
+  const sharePayload: SharePayload = {
+    title: spot.name,
+    description: [spot.region, (introduction ?? '').replace(/\s+/g, ' ').slice(0, 80)].filter(Boolean).join(' · '),
+    imageUrl: pickImage(spot, 'full'),
+    path: `/spot/${spot.id}`,
+  }
   const longIntroduction = (introduction?.length ?? 0) > 140
 
   const recommendedTypes = MBTI_STYLES.filter((s) => s.category === spot.category)
@@ -238,9 +246,9 @@ export default function SpotDetailPage() {
               >
                 <Heart className="h-5 w-5" strokeWidth={2.2} fill={liked ? 'currentColor' : 'none'} />
               </button>
-              <button type="button" aria-label="공유하기" className="text-white drop-shadow">
+              <ShareButton payload={sharePayload} ariaLabel="공유하기" className="text-white drop-shadow">
                 <Share2 className="h-5 w-5" strokeWidth={2.2} />
-              </button>
+              </ShareButton>
             </div>
           </header>
 

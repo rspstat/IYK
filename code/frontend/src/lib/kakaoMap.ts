@@ -1,10 +1,9 @@
 import type { Spot } from '../types'
+import { KAKAO_JS_KEY, hasKakaoKey } from './kakaoKey'
 
 // 카카오 지도 JavaScript 키. Kakao Developers 앱의 [플랫폼 키] > JavaScript 키이며, 도메인 등록으로 보호되는 공개용 키다.
 // 없으면 지도 대신 자리표시를 보여준다. 설정 방법은 .env.example 참고.
-const APP_KEY = import.meta.env.VITE_KAKAO_MAP_KEY as string | undefined
-
-export const hasKakaoMapKey = Boolean(APP_KEY && APP_KEY.trim())
+export const hasKakaoMapKey = hasKakaoKey
 
 let loading: Promise<typeof kakao.maps> | null = null
 
@@ -19,7 +18,7 @@ export function loadKakaoMaps(): Promise<typeof kakao.maps> {
 
   loading = new Promise((resolve, reject) => {
     const script = document.createElement('script')
-    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${encodeURIComponent(APP_KEY!.trim())}&autoload=false`
+    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${encodeURIComponent(KAKAO_JS_KEY)}&autoload=false`
     script.async = true
     script.onload = () => {
       if (!window.kakao?.maps) {
