@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { likeApi, parseServerDate, type MyLike } from '../api/endpoints'
 
 export interface SavedRoute {
   id: string
@@ -14,7 +15,11 @@ interface TravelState {
   routeSpotIds: string[]
   activeEditRouteId: string | null
   savedRoutes: SavedRoute[]
-  toggleLike: (id: string) => void
+  // 서버(POST /api/spots/{id}/like)에 토글을 요청하고, 응답의 liked 값을 그대로 반영한다. 성공 여부를 반환.
+  toggleLike: (id: string) => Promise<boolean>
+  // 서버의 내 찜 목록(GET /api/me/likes)으로 로컬 캐시를 통째로 교체한다.
+  setLikes: (likes: MyLike[]) => void
+  resetLikes: () => void
   addToRoute: (id: string) => void
   removeFromRoute: (id: string) => void
   moveInRoute: (id: string, direction: 'up' | 'down') => void
@@ -34,21 +39,34 @@ export const useTravelStore = create<TravelState>()(
       routeSpotIds: [],
       activeEditRouteId: null,
       savedRoutes: [],
-      toggleLike: (id) =>
-        set((state) => {
-          if (state.likedSpotIds.includes(id)) {
-            const nextLikedAt = { ...state.likedAt }
-            delete nextLikedAt[id]
-            return {
-              likedSpotIds: state.likedSpotIds.filter((spotId) => spotId !== id),
-              likedAt: nextLikedAt,
+      toggleLike: async (id) => {
+        try {
+          const { liked } = await likeApi.toggle(id)
+          set((state) => {
+            const withoutId = state.likedSpotIds.filter((spotId) => spotId !== id)
+            if (!liked) {
+              const nextLikedAt = { ...state.likedAt }
+              delete nextLikedAt[id]
+              return { likedSpotIds: withoutId, likedAt: nextLikedAt }
             }
-          }
-          return {
-            likedSpotIds: [...state.likedSpotIds, id],
-            likedAt: { ...state.likedAt, [id]: Date.now() },
-          }
+            return {
+              likedSpotIds: [...withoutId, id],
+              likedAt: { ...state.likedAt, [id]: Date.now() },
+            }
+          })
+          return true
+        } catch (error) {
+          // 실패하면 하트 상태를 바꾸지 않는다. 401이면 apiClient가 이미 로그아웃 처리했다.
+          console.error('찜 토글 실패', error)
+          return false
+        }
+      },
+      setLikes: (likes) =>
+        set({
+          likedSpotIds: likes.map((like) => like.spotId),
+          likedAt: Object.fromEntries(likes.map((like) => [like.spotId, parseServerDate(like.createdAt)])),
         }),
+      resetLikes: () => set({ likedSpotIds: [], likedAt: {} }),
       addToRoute: (id) =>
         set((state) =>
           state.routeSpotIds.includes(id) ? state : { routeSpotIds: [...state.routeSpotIds, id] },

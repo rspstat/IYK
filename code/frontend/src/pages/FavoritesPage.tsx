@@ -80,9 +80,11 @@ export default function FavoritesPage() {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]))
   }
 
-  function handleUnlike(id: string) {
-    toggleLike(id)
-    setSelectedIds((prev) => prev.filter((s) => s !== id))
+  async function handleUnlike(id: string) {
+    // 서버 요청이 실패하면 찜이 그대로 남아있으니 경로 선택도 유지한다.
+    if (await toggleLike(id)) {
+      setSelectedIds((prev) => prev.filter((s) => s !== id))
+    }
   }
 
   function buildRouteFromSelection() {

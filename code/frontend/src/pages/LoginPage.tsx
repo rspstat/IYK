@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, Mail, Lock } from 'lucide-react'
+import { getErrorMessage } from '../api/client'
 import { useAuthStore } from '../store/useAuthStore'
 
 export default function LoginPage() {
@@ -12,13 +13,19 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault()
-    if (login(email, password)) {
+    setError('')
+    setSubmitting(true)
+    try {
+      await login(email, password)
       navigate(redirectTo)
-    } else {
-      setError('이메일 또는 비밀번호가 올바르지 않습니다.')
+    } catch (err) {
+      setError(getErrorMessage(err))
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -67,9 +74,10 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            className="mt-2 rounded-full bg-primary-800 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-primary-900"
+            disabled={submitting}
+            className="mt-2 rounded-full bg-primary-800 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-primary-900 disabled:opacity-60"
           >
-            로그인
+            {submitting ? '로그인 중...' : '로그인'}
           </button>
         </form>
 

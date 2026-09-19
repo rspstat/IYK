@@ -19,6 +19,7 @@ import { SPOT_GRADIENTS } from '../data/spotGradients'
 import { useTravelStore } from '../store/useTravelStore'
 import { useRequireAuth } from '../hooks/useRequireAuth'
 import BottomNav from '../components/BottomNav'
+import SpotComments from '../components/SpotComments'
 import type { CongestionLevel } from '../types'
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
@@ -216,28 +217,7 @@ export default function SpotDetailPage() {
           </div>
         </section>
 
-        <section className="mt-7 px-5">
-          <h2 className="font-headline mb-3 text-base font-bold text-neutral-900 dark:text-neutral-50">
-            여행자 후기
-          </h2>
-          <div className="rounded-2xl bg-neutral-50 p-4 dark:bg-neutral-800/40">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-tertiary-100 text-xs font-bold text-tertiary-700 dark:bg-tertiary-900/40 dark:text-tertiary-300">
-                  민
-                </span>
-                <span className="text-sm font-semibold text-neutral-800 dark:text-neutral-100">여행자 민준</span>
-              </div>
-              <span className="text-xs text-neutral-400 dark:text-neutral-500">2시간 전</span>
-            </div>
-            <p className="mt-2 text-sm leading-relaxed text-neutral-600 dark:text-neutral-300">
-              생각보다 훨씬 좋았어요! {spot.name}, 다음에 또 오고 싶네요.
-            </p>
-            <div className="mt-2 flex items-center gap-3 text-xs text-neutral-400 dark:text-neutral-500">
-              <span>♥ 24</span>
-            </div>
-          </div>
-        </section>
+        <SpotComments key={spot.id} spotId={spot.id} />
 
         <div className="mt-7 flex gap-2 px-5">
           <Link
