@@ -93,7 +93,7 @@ export default function FavoritesPage() {
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
-      <div className="mx-auto max-w-md pb-32">
+      <div className="mx-auto max-w-md pb-32 sm:max-w-xl md:max-w-2xl lg:max-w-3xl">
         <header className="flex items-center justify-between bg-white px-4 py-4 dark:bg-neutral-950">
           <div className="flex items-center gap-2">
             <button type="button" onClick={() => navigate(-1)} className="text-neutral-900 dark:text-neutral-50">
@@ -289,7 +289,7 @@ export default function FavoritesPage() {
 
       {likedSpots.length > 0 && (
         <div className="fixed inset-x-0 bottom-20 z-40 px-5">
-          <div className="mx-auto max-w-md">
+          <div className="mx-auto max-w-md sm:max-w-xl md:max-w-2xl lg:max-w-3xl">
             <button
               type="button"
               onClick={buildRouteFromSelection}

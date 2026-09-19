@@ -210,7 +210,7 @@ export default function RoutePage() {
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
-      <div className="mx-auto max-w-md pb-24">
+      <div className="mx-auto max-w-md pb-24 sm:max-w-xl md:max-w-2xl lg:max-w-3xl">
         <header className="flex items-center justify-between bg-white px-4 py-4 dark:bg-neutral-950">
           <button type="button" onClick={() => attemptLeave('/')} className="text-primary-800 dark:text-primary-400">
             <ArrowLeft className="h-5 w-5" strokeWidth={2.4} />

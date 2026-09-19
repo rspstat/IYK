@@ -29,7 +29,7 @@ export default function ResultPage() {
 
   if (!style) {
     return (
-      <main className="mx-auto max-w-md px-6 py-12 text-center">
+      <main className="mx-auto max-w-md px-6 py-12 text-center sm:max-w-xl md:max-w-2xl lg:max-w-3xl">
         <p className="mb-4 text-neutral-500 dark:text-neutral-400">알 수 없는 MBTI 유형입니다.</p>
         <Link to="/" className="text-primary-600 underline dark:text-primary-400">
           메인으로 돌아가기
@@ -50,7 +50,7 @@ export default function ResultPage() {
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
-      <div className="mx-auto max-w-md pb-24">
+      <div className="mx-auto max-w-md pb-24 sm:max-w-xl md:max-w-2xl lg:max-w-3xl">
         <header className="flex items-center justify-between px-5 pt-5">
           <Link to="/" className="flex items-center gap-2 text-neutral-900 dark:text-neutral-50">
             <ArrowLeft className="h-5 w-5" strokeWidth={2.2} />

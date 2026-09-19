@@ -24,7 +24,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-neutral-950">
-      <div className="mx-auto flex min-h-screen max-w-md flex-col px-6 pt-5">
+      <div className="mx-auto flex min-h-screen max-w-md flex-col px-6 pt-5 sm:max-w-xl md:max-w-2xl lg:max-w-3xl">
         <button type="button" onClick={() => navigate(-1)} className="self-start text-neutral-900 dark:text-neutral-50">
           <ArrowLeft className="h-5 w-5" strokeWidth={2.2} />
         </button>

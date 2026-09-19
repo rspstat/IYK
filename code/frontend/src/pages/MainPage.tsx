@@ -91,7 +91,7 @@ export default function MainPage() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-neutral-950">
-      <div className="mx-auto max-w-md pb-24">
+      <div className="mx-auto max-w-md pb-24 sm:max-w-xl md:max-w-2xl lg:max-w-3xl">
         <header className="flex items-center justify-between px-5 pt-5">
           <div className="flex items-center gap-1 text-primary-600 dark:text-primary-400">
             <MapPin className="h-4 w-4" strokeWidth={2} />

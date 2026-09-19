@@ -69,7 +69,7 @@ export default function SpotDetailPage() {
 
   if (!spot) {
     return (
-      <main className="mx-auto max-w-md px-6 py-12 text-center">
+      <main className="mx-auto max-w-md px-6 py-12 text-center sm:max-w-xl md:max-w-2xl lg:max-w-3xl">
         <p className="mb-4 text-neutral-500 dark:text-neutral-400">존재하지 않는 관광지입니다.</p>
         <Link to="/" className="text-primary-600 underline dark:text-primary-400">
           메인으로 돌아가기
@@ -96,7 +96,7 @@ export default function SpotDetailPage() {
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
-      <div className="mx-auto max-w-md pb-24">
+      <div className="mx-auto max-w-md pb-24 sm:max-w-xl md:max-w-2xl lg:max-w-3xl">
         <div className={`relative h-64 w-full overflow-hidden bg-gradient-to-b ${SPOT_GRADIENTS[spot.id] ?? 'from-neutral-300 to-neutral-500'}`}>
           <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-black/40 to-transparent" />
           <header className="relative flex items-center justify-between px-4 pt-4">

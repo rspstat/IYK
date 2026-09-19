@@ -34,7 +34,7 @@ export default function MyPage() {
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
-      <div className="mx-auto max-w-md pb-28">
+      <div className="mx-auto max-w-md pb-28 sm:max-w-xl md:max-w-2xl lg:max-w-3xl">
         <header className="flex items-center justify-between bg-white px-4 py-4 dark:bg-neutral-950">
           <div className="flex items-center gap-2">
             <button type="button" onClick={() => navigate(-1)} className="text-neutral-900 dark:text-neutral-50">
