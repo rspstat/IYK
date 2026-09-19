@@ -4,7 +4,8 @@ spring:
   config:
     # code/backend/.env 가 있으면 KEY=VALUE 줄을 프로퍼티로 읽는다(없어도 무시). 비밀값을 커밋하지 않기 위한 용도.
     # .env.example 참고. 같은 이름의 OS 환경변수로 대신 지정해도 된다.
-    import: optional:file:.env[.properties]
+    # IYK_ENV_FILE 로 파일 경로를 바꿀 수 있다 — 테스트는 존재하지 않는 파일을 가리켜 실제 키를 읽지 않게 한다(build.gradle).
+    import: optional:file:${IYK_ENV_FILE:.env}[.properties]
   datasource:
     url: jdbc:h2:mem:iyk;MODE=MySQL
     driver-class-name: org.h2.Driver

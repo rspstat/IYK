@@ -39,4 +39,8 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+	// 테스트가 code/backend/.env 의 실제 인증키를 읽거나 TourAPI 를 호출(동기화)하지 않도록 한다.
+	// .env 를 읽지 않으므로 개발자마다 다른 키 설정에 테스트 결과가 좌우되지 않고, 실패 메시지에 실제 키가 찍힐 일도 없다.
+	systemProperty 'IYK_ENV_FILE', 'not-read-in-tests.env'
+	systemProperty 'tourapi.sync.enabled', 'false'
 }

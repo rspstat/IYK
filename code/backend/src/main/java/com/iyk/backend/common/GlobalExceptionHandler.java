@@ -1,5 +1,8 @@
 package com.iyk.backend.common;
 
+import com.iyk.backend.external.client.TourApiException;
+import com.iyk.backend.external.exception.DataNotReadyException;
+import com.iyk.backend.external.exception.SpotNotFoundException;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +41,24 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<Map<String, Object>> handleUnreadable(HttpMessageNotReadableException ex) {
         return invalidRequest("요청 본문을 읽을 수 없습니다. JSON 형식을 확인해주세요.");
+    }
+
+    @ExceptionHandler(SpotNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleSpotNotFound(SpotNotFoundException ex) {
+        return error(HttpStatus.NOT_FOUND, "SPOT_NOT_FOUND", "해당 관광지를 찾을 수 없습니다.");
+    }
+
+    // 서버 시작 직후 TourAPI 동기화가 끝나기 전
+    @ExceptionHandler(DataNotReadyException.class)
+    public ResponseEntity<Map<String, Object>> handleDataNotReady(DataNotReadyException ex) {
+        return error(HttpStatus.SERVICE_UNAVAILABLE, "DATA_NOT_READY", ex.getMessage());
+    }
+
+    // 한국관광공사 API 장애·한도 초과 등. 원인(주소·키 포함 가능)은 응답에 싣지 않고 로그에만 남긴다.
+    @ExceptionHandler(TourApiException.class)
+    public ResponseEntity<Map<String, Object>> handleTourApi(TourApiException ex) {
+        log.warn("TourAPI 오류: {}", ex.getMessage());
+        return error(HttpStatus.BAD_GATEWAY, "UPSTREAM_ERROR", "관광 데이터 서버에 문제가 있어 정보를 가져오지 못했습니다. 잠시 후 다시 시도해주세요.");
     }
 
     // 존재하지 않는 경로
