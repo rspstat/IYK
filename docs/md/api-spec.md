@@ -1,4 +1,4 @@
-# API 명세서 (v1.4)
+# API 명세서 (v1.5)
 
 - 작성일: 2026-07-13
 - 회의록(2026-07-05)에서 합의한 대로, 이 문서가 확정되기 전까지는 프론트엔드/백엔드 어느 쪽도 응답 필드명을 임의로 바꾸지 않습니다. 변경이 필요하면 이 문서를 먼저 고치고 팀에 공유합니다.
@@ -26,7 +26,9 @@
   | 405 | `METHOD_NOT_ALLOWED` | 경로는 맞지만 HTTP 메서드가 다른 경우 |
   | 415 등 | `INVALID_REQUEST` | Spring MVC가 정한 그 밖의 4xx (예: 지원하지 않는 Content-Type)는 원래 상태코드를 유지 |
   | 500 | `INTERNAL_ERROR` | 처리되지 않은 서버 오류 (상세는 서버 로그에만 기록) |
+  | 502 | `KAKAO_ERROR` | 카카오 서버와 통신하지 못했거나 카카오가 5xx 로 응답한 경우 |
   | 502 | `UPSTREAM_ERROR` | 한국관광공사 API 장애·한도 초과 등으로 상세 정보를 못 받은 경우 (원인은 서버 로그에만 기록) |
+  | 503 | `KAKAO_NOT_CONFIGURED` | 서버에 카카오 로그인 키(`KAKAO_REST_API_KEY`)가 설정되지 않은 경우 |
   | 503 | `DATA_NOT_READY` | 서버 시작 직후 TourAPI 동기화가 끝나기 전이라 관광지 데이터가 아직 비어 있는 경우. 잠시 후 재시도 |
 
   프론트는 HTTP 상태코드로 분기하고, 사용자에게 보여줄 문구는 `error.message`를 그대로 써도 됩니다(400/401은 한국어 문구).
@@ -80,7 +82,42 @@
 { "accessToken": "jwt...", "user": { "id": 1, "nickname": "string" } }
 ```
 
-이메일 없음/비밀번호 불일치 모두 동일하게 `400 INVALID_REQUEST` ("이메일 또는 비밀번호가 올바르지 않습니다.") — 계정 존재 여부가 드러나지 않도록 메시지를 통일함.
+이메일 없음/비밀번호 불일치 모두 동일하게 `400 INVALID_REQUEST` ("이메일 또는 비밀번호가 올바르지 않습니다.") — 계정 존재 여부가 드러나지 않도록 메시지를 통일함. 카카오로 가입한 계정은 이메일·비밀번호가 없어 이 방식으로는 로그인할 수 없다(같은 메시지).
+
+### 카카오 로그인 (v1.5)
+
+OAuth 인가 코드 방식이다. 서버가 카카오와 통신하고(클라이언트 시크릿은 서버 `.env`에만 있다), 프론트는 카카오 로그인 창으로 이동했다가 돌아온 `code`를 서버에 넘긴다. 카카오 콘솔에서 카카오 로그인 사용 설정 ON, 리다이렉트 URI 등록(`{프론트 주소}/auth/kakao/callback`)이 필요하다.
+
+```
+1. 프론트  GET  /api/auth/kakao/login-url?redirectUri=…&state=…  → { "url": "https://kauth.kakao.com/oauth/authorize?…" }
+2. 브라우저 → 카카오 로그인·동의 → {redirectUri}?code=…&state=… 로 돌아옴 (프론트가 state 일치 확인)
+3. 프론트  POST /api/auth/kakao { "code": "…", "redirectUri": "…" }  → 로그인 응답과 같은 형식
+```
+
+#### `GET /api/auth/providers`
+로그인 방식별 사용 가능 여부. 프론트가 카카오 버튼을 보여줄지 정하는 데 쓴다.
+```json
+{ "kakao": true }
+```
+
+#### `GET /api/auth/kakao/login-url?redirectUri=…&state=…`
+```json
+// response 200
+{ "url": "https://kauth.kakao.com/oauth/authorize?client_id=…&redirect_uri=…&response_type=code&state=…" }
+```
+`redirectUri`는 `http(s)://호스트/auth/kakao/callback` 형식이어야 하고(쿼리·해시 없음), `state`는 영문·숫자·`_`·`-` 1~128자. 아니면 `400 INVALID_REQUEST`. 서버에 카카오 키가 없으면 `503 KAKAO_NOT_CONFIGURED`.
+
+#### `POST /api/auth/kakao`
+```json
+// request
+{ "code": "카카오가 돌려준 인가 코드", "redirectUri": "인가 코드를 받을 때 쓴 redirect_uri 와 같은 값" }
+
+// response 200 — POST /api/auth/login 과 같은 형식
+{ "accessToken": "jwt...", "user": { "id": 7, "nickname": "길동" } }
+```
+- 처음 로그인하면 계정을 만들고, 이미 있으면 그 계정으로 로그인한다. 계정은 카카오 회원번호로만 구분하며, **이메일은 받지 않는다**(이메일로 가입한 계정과 자동으로 합치지 않는다).
+- 닉네임은 카카오가 주면 그것을, 안 주면 `카카오사용자` + 회원번호 끝 4자리를 쓴다. 재로그인해도 닉네임을 덮어쓰지 않는다.
+- 인가 코드가 만료됐거나 이미 썼거나 `redirectUri`가 다르면 `400 INVALID_REQUEST`("카카오 로그인 인증에 실패했어요…"), 카카오 서버 문제면 `502 KAKAO_ERROR`.
 
 ---
 
@@ -259,3 +296,4 @@
 - v1.2 (2026-09-19): 에러 응답 통일. 미인증 요청을 `401 UNAUTHORIZED` JSON으로 처리(커스텀 `AuthenticationEntryPoint`), `@Valid` 검증 실패·깨진 JSON·없는 경로·405·미처리 예외도 공통 에러 포맷으로 반환(이전에는 빈 본문 403 또는 기본 에러 페이지). 공통 규칙에 `code` 목록 추가.
 - v1.3 (2026-09-19): 프론트 연동을 위해 하위 호환 확장 2건. 댓글 응답에 `authorId` 추가, `GET /api/me/likes`(내 찜 목록) 추가. 백엔드 통합 테스트(`ApiContractTests`)로 에러 포맷·찜·댓글 계약을 검증.
 - v1.4 (2026-09-19): TourAPI 실연동. 추천·상세·연관·혼잡도·경로를 목데이터에서 실데이터(충북 관광지 약 1,300곳)로 교체. `Spot.congestion`이 `null` 가능(예측 정보 없음), `thumbnailUrl` 추가, 상세에 `tel`·`petFriendly`·`barrierFree` 추가, `GET /api/spots?ids=`·`GET /api/spots/search` 추가, 에러 코드 `SPOT_NOT_FOUND`·`DATA_NOT_READY`·`UPSTREAM_ERROR` 추가. 혼잡도 등급 기준(33/58)과 관광지 id 체계 명시.
+- v1.5 (2026-09-19): 카카오 로그인 추가(`GET /api/auth/providers`, `GET /api/auth/kakao/login-url`, `POST /api/auth/kakao`). 카카오 계정은 이메일 없이 가입되며 `users`에 `provider`·`provider_id` 추가. 에러 코드 `KAKAO_NOT_CONFIGURED`·`KAKAO_ERROR`.

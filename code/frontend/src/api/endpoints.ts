@@ -44,6 +44,14 @@ export const authApi = {
     request<RegisterResponse>('/auth/register', { method: 'POST', body: { email, password, nickname } }),
   login: (email: string, password: string) =>
     request<LoginResponse>('/auth/login', { method: 'POST', body: { email, password } }),
+  // 로그인 방식별 사용 가능 여부. kakao 가 false 면 서버에 카카오 로그인 키가 없다는 뜻이라 버튼을 숨긴다.
+  providers: () => request<{ kakao: boolean }>('/auth/providers'),
+  // 카카오 로그인 창 주소. client_id(REST API 키)를 프론트에 두지 않으려고 서버가 만들어 준다.
+  kakaoLoginUrl: (redirectUri: string, state: string) =>
+    request<{ url: string }>(`/auth/kakao/login-url?redirectUri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(state)}`),
+  // 카카오가 돌려준 인가 코드를 서버로 보내 우리 서비스의 로그인 토큰으로 바꾼다.
+  kakaoLogin: (code: string, redirectUri: string) =>
+    request<LoginResponse>('/auth/kakao', { method: 'POST', body: { code, redirectUri } }),
 }
 
 export const likeApi = {

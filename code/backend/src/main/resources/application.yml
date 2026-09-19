@@ -29,6 +29,11 @@ server:
     # Spring DevTools가 개발 모드에서 켜는 include-stacktrace=always 기본값을 명시적으로 덮어쓴다.
     include-stacktrace: never
 
+kakao:
+  # 카카오 로그인(OAuth). Kakao Developers 앱의 [플랫폼 키] > REST API 키와 그 클라이언트 시크릿. 비워두면 카카오 로그인 버튼이 숨겨진다.
+  rest-api-key: ${KAKAO_REST_API_KEY:}
+  client-secret: ${KAKAO_CLIENT_SECRET:}
+
 tourapi:
   # 공공데이터포털(data.go.kr)에서 발급한 한국관광공사 OpenAPI 일반 인증키. Encoding/Decoding 어느 쪽을 넣어도 된다.
   # 공용 키 하나로 9종을 다 쓸 수 있으면 service-key 만, API마다 키가 다르면 keys 아래에 각각 채운다.

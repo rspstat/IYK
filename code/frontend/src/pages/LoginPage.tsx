@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, Mail, Lock } from 'lucide-react'
 import { getErrorMessage } from '../api/client'
+import KakaoLoginButton from '../components/KakaoLoginButton'
 import { useAuthStore } from '../store/useAuthStore'
 
 export default function LoginPage() {
@@ -80,6 +81,8 @@ export default function LoginPage() {
             {submitting ? '로그인 중...' : '로그인'}
           </button>
         </form>
+
+        <KakaoLoginButton afterLoginPath={redirectTo} />
 
         <p className="mt-4 text-center text-xs text-neutral-500 dark:text-neutral-400">
           계정이 없으신가요?{' '}

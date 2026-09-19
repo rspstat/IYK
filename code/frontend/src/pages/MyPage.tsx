@@ -63,7 +63,7 @@ export default function MyPage() {
               <p className="font-headline text-base font-bold text-neutral-900 dark:text-neutral-50">
                 {user.nickname}
               </p>
-              <p className="text-xs text-neutral-400 dark:text-neutral-500">{user.email}</p>
+              <p className="text-xs text-neutral-400 dark:text-neutral-500">{user.email ?? '카카오 계정으로 로그인'}</p>
             </div>
           </div>
         </section>

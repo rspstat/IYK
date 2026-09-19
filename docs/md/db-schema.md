@@ -1,4 +1,4 @@
-# DB 스키마 (v1.1)
+# DB 스키마 (v1.2)
 
 - 작성일: 2026-07-13
 - 담당: 내부 로직. 실제 JPA 엔티티는 `code/backend/src/main/java/com/iyk/backend/domain/`에 구현되어 있으며, 이 문서는 그 스키마를 사람이 읽기 쉽게 정리한 것입니다. 엔티티와 문서 중 하나를 바꾸면 반드시 다른 쪽도 맞춰주세요.
@@ -18,10 +18,15 @@ users (1) ──< comments >── (1) spots_cache
 | 컬럼 | 타입 | 제약 | 설명 |
 |---|---|---|---|
 | id | BIGINT | PK, AUTO_INCREMENT | |
-| email | VARCHAR | UNIQUE, NOT NULL | 로그인 ID |
-| password_hash | VARCHAR | NOT NULL | 평문 저장 금지, BCrypt 등 해시 |
+| email | VARCHAR | UNIQUE (NULL 허용) | 이메일 가입 계정의 로그인 ID. **카카오 계정은 이메일을 받지 않아 NULL** (UNIQUE 는 NULL 을 여러 개 허용) |
+| password_hash | VARCHAR | NULL 허용 | 평문 저장 금지, BCrypt 등 해시. **카카오 계정은 NULL** → 비밀번호 로그인 불가 |
 | nickname | VARCHAR | NOT NULL | 댓글 작성자 표시명 |
+| provider | VARCHAR | | 가입 경로: `LOCAL`(이메일) / `KAKAO`. 이 컬럼이 생기기 전 행은 NULL 이며 LOCAL 로 본다 |
+| provider_id | VARCHAR | | 가입 경로 쪽 회원 식별자(카카오 회원번호). 이메일 가입 계정은 NULL |
 | created_at | TIMESTAMP | | 가입일시 |
+| | | UNIQUE(provider, provider_id) | 같은 카카오 계정이 계정 두 개로 갈라지는 것을 막는다 |
+
+**기존 DB 이전 시 주의(v1.2):** 개발용 H2 는 재시작하면 새로 만들어져 문제없지만, 이미 운영 중인 MySQL 이라면 `ddl-auto: update`가 기존 컬럼의 NOT NULL 을 풀어주지 않는다. 카카오 로그인을 켜기 전에 `ALTER TABLE users MODIFY email VARCHAR(255) NULL, MODIFY password_hash VARCHAR(255) NULL;`를 직접 실행해야 한다.
 
 ## spots_cache
 
@@ -96,3 +101,4 @@ TourAPI 국문관광정보 + 특화 API 응답을 서버 시작 시와 매일 �
 
 - v1.0 (2026-07-13): 최초 작성.
 - v1.1 (2026-09-19): TourAPI 실연동에 맞춰 `spots_cache` 컬럼 확장(시군구 코드·썸네일·전화·반려동물/무장애 플래그·상세 캐시)과 `congestion_forecast` 테이블 추가. area_code 를 법정동 코드(43)로 정정.
+- v1.2 (2026-09-19): 카카오 로그인 지원을 위해 `users.email`·`password_hash` NULL 허용, `provider`·`provider_id` 와 UNIQUE(provider, provider_id) 추가.

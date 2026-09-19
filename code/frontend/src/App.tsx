@@ -9,6 +9,7 @@ import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
 import FavoritesPage from './pages/FavoritesPage'
 import MyPage from './pages/MyPage'
+import KakaoCallbackPage from './pages/KakaoCallbackPage'
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
           <Route path="/search" element={<SearchPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
+          <Route path="/auth/kakao/callback" element={<KakaoCallbackPage />} />
           <Route path="/favorites" element={<FavoritesPage />} />
           <Route path="/mypage" element={<MyPage />} />
         </Route>

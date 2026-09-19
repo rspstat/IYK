@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, Mail, Lock, User } from 'lucide-react'
 import { getErrorMessage } from '../api/client'
+import KakaoLoginButton from '../components/KakaoLoginButton'
 import { useAuthStore } from '../store/useAuthStore'
 
 export default function SignupPage() {
@@ -93,6 +94,8 @@ export default function SignupPage() {
             {submitting ? '가입 중...' : '회원가입'}
           </button>
         </form>
+
+        <KakaoLoginButton afterLoginPath={redirectTo} />
 
         <p className="mt-4 text-center text-xs text-neutral-500 dark:text-neutral-400">
           이미 계정이 있으신가요?{' '}

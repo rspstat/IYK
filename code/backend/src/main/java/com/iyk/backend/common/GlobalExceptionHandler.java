@@ -1,5 +1,7 @@
 package com.iyk.backend.common;
 
+import com.iyk.backend.domain.user.kakao.KakaoLoginException;
+import com.iyk.backend.domain.user.kakao.KakaoNotConfiguredException;
 import com.iyk.backend.external.client.TourApiException;
 import com.iyk.backend.external.exception.DataNotReadyException;
 import com.iyk.backend.external.exception.SpotNotFoundException;
@@ -52,6 +54,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DataNotReadyException.class)
     public ResponseEntity<Map<String, Object>> handleDataNotReady(DataNotReadyException ex) {
         return error(HttpStatus.SERVICE_UNAVAILABLE, "DATA_NOT_READY", ex.getMessage());
+    }
+
+    @ExceptionHandler(KakaoNotConfiguredException.class)
+    public ResponseEntity<Map<String, Object>> handleKakaoNotConfigured(KakaoNotConfiguredException ex) {
+        return error(HttpStatus.SERVICE_UNAVAILABLE, "KAKAO_NOT_CONFIGURED", ex.getMessage());
+    }
+
+    @ExceptionHandler(KakaoLoginException.class)
+    public ResponseEntity<Map<String, Object>> handleKakaoError(KakaoLoginException ex) {
+        return error(HttpStatus.BAD_GATEWAY, "KAKAO_ERROR", ex.getMessage());
     }
 
     // 한국관광공사 API 장애·한도 초과 등. 원인(주소·키 포함 가능)은 응답에 싣지 않고 로그에만 남긴다.
