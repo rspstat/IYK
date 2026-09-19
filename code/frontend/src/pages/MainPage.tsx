@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
   MapPin,
@@ -20,10 +21,14 @@ import {
   BarChart3,
   type LucideIcon,
 } from 'lucide-react'
-import { MOCK_SPOTS } from '../data/mockSpots'
+import { spotApi } from '../api/spots'
 import { useTravelStore } from '../store/useTravelStore'
+import { useSpotStore } from '../store/useSpotStore'
 import { useRequireAuth } from '../hooks/useRequireAuth'
+import { useApiData } from '../hooks/useApiData'
 import BottomNav from '../components/BottomNav'
+import SpotImage from '../components/SpotImage'
+import { pickImage } from '../data/spotImage'
 
 // 16개 유형을 표준 4x4 그리드 순서(IS·IN / ES·EN x J/P)로 배치
 const GRID_ORDER = [
@@ -77,17 +82,20 @@ function MbtiIcon({ type, className = 'h-7 w-7' }: { type: string; className?: s
   return <Icon className={className} strokeWidth={1.8} />
 }
 
-// 관광사진 API 연동 전까지 명소 사진 자리를 대신할 그라디언트
-const SPOT_GRADIENTS: Record<string, string> = {
-  'danyang-manchonha': 'from-tertiary-400 via-tertiary-300 to-secondary-300',
-  'goesan-sanmakigil': 'from-primary-200 via-primary-300 to-secondary-200',
-}
+// 홈에 미리 보여줄 추천 유형. 결과 페이지와 같은 데이터(GET /api/recommendations)를 쓴다.
+const FEATURED_TYPE = 'ENFP'
 
 export default function MainPage() {
   const likedSpotIds = useTravelStore((state) => state.likedSpotIds)
   const toggleLike = useTravelStore((state) => state.toggleLike)
   const requireAuth = useRequireAuth()
-  const trendingSpots = MOCK_SPOTS.slice(0, 2)
+  const rememberSpots = useSpotStore((state) => state.remember)
+  const featured = useApiData(() => spotApi.recommendations(FEATURED_TYPE), 'home')
+  const featuredSpots = featured.data?.spots ?? []
+  const trendingSpots = featuredSpots.slice(1, 3)
+  useEffect(() => {
+    if (featured.data) rememberSpots(featured.data.spots)
+  }, [featured.data, rememberSpots])
 
   return (
     <div className="min-h-screen bg-white dark:bg-neutral-950">
@@ -134,23 +142,30 @@ export default function MainPage() {
         </section>
 
         <section className="mt-7 px-5">
-          <Link
-            to="/result/ENFP"
-            className="relative block h-36 overflow-hidden rounded-2xl bg-gradient-to-br from-tertiary-400 via-tertiary-300 to-secondary-300 shadow-sm"
-          >
-            <span className="absolute left-3 top-3 rounded-full bg-primary-600 px-2 py-0.5 text-[11px] font-bold text-white">
-              HOT TREND
-            </span>
-            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-4 pb-3 pt-8">
-              <p className="text-sm font-bold text-white">액티비티를 즐기는 ENFP라면?</p>
-              <p className="mt-0.5 text-xs text-white/85">단양 패러글라이딩으로 스트레스 해소!</p>
-            </div>
+          <Link to={`/result/${FEATURED_TYPE}`} className="block">
+            <SpotImage
+              src={featuredSpots[0] ? pickImage(featuredSpots[0], 'full') : null}
+              seed={FEATURED_TYPE}
+              className="h-36 rounded-2xl shadow-sm"
+            >
+              <span className="absolute left-3 top-3 rounded-full bg-primary-600 px-2 py-0.5 text-[11px] font-bold text-white">
+                {FEATURED_TYPE} 추천
+              </span>
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-4 pb-3 pt-8">
+                <p className="text-sm font-bold text-white">문화와 이야기를 좋아하는 {FEATURED_TYPE}라면?</p>
+                {featuredSpots[0] && (
+                  <p className="mt-0.5 text-xs text-white/85">
+                    {featuredSpots[0].region} {featuredSpots[0].name}
+                  </p>
+                )}
+              </div>
+            </SpotImage>
           </Link>
         </section>
 
         <section className="mt-7 px-5">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="font-headline text-base font-bold text-neutral-900 dark:text-neutral-50">요즘 뜨는 충북 명소</h2>
+            <h2 className="font-headline text-base font-bold text-neutral-900 dark:text-neutral-50">충북 추천 명소</h2>
             <span className="text-xs text-neutral-400 dark:text-neutral-500">더보기</span>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -158,9 +173,7 @@ export default function MainPage() {
               const liked = likedSpotIds.includes(spot.id)
               return (
                 <Link key={spot.id} to={`/spot/${spot.id}`} className="block">
-                  <div
-                    className={`relative h-28 overflow-hidden rounded-xl bg-gradient-to-br shadow-sm ${SPOT_GRADIENTS[spot.id] ?? 'from-neutral-200 to-neutral-300'}`}
-                  >
+                  <SpotImage src={pickImage(spot, 'thumb')} seed={spot.id} className="h-28 rounded-xl shadow-sm">
                     <button
                       type="button"
                       onClick={(e) => {
@@ -172,7 +185,7 @@ export default function MainPage() {
                     >
                       {liked ? '♥' : '♡'}
                     </button>
-                  </div>
+                  </SpotImage>
                   <p className="mt-2 truncate text-xs font-semibold text-neutral-800 dark:text-neutral-100">
                     {spot.name}
                   </p>

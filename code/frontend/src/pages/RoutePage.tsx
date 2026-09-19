@@ -17,22 +17,34 @@ import {
   Plus,
 } from 'lucide-react'
 import { MBTI_STYLES } from '../data/mbtiStyles'
-import { MOCK_SPOTS } from '../data/mockSpots'
-import { SPOT_GRADIENTS } from '../data/spotGradients'
 import { useTravelStore } from '../store/useTravelStore'
 import { useNavGuardStore } from '../store/useNavGuardStore'
 import { useRequireAuth } from '../hooks/useRequireAuth'
+import { useSpotsByIds } from '../hooks/useSpotsByIds'
 import BottomNav from '../components/BottomNav'
+import SpotImage from '../components/SpotImage'
+import { pickImage } from '../data/spotImage'
 import type { Spot } from '../types'
 
 const PIN_SHADES = ['bg-primary-700', 'bg-primary-500', 'bg-primary-300']
 
-// 지도 API 연동 전까지 핀 위치를 흉내 낸 좌표 (실제 좌표 아님, 0~100 백분율)
-const PIN_POSITIONS = [
-  { top: 32, left: 28 },
-  { top: 46, left: 58 },
-  { top: 66, left: 76 },
-]
+// 카카오 지도 연동 전까지 쓰는 약식 지도: 관광지의 실제 좌표를 영역 안의 상대 위치(0~100%)로 바꿔 핀을 놓는다.
+// 관광지 사이의 상대적인 방향과 거리만 맞고, 실제 지도(도로·지형)는 아니다.
+function pinPositions(spots: Spot[]) {
+  if (spots.length === 0) return []
+  const lats = spots.map((spot) => spot.coords.lat)
+  const lngs = spots.map((spot) => spot.coords.lng)
+  const midLat = (Math.min(...lats) + Math.max(...lats)) / 2
+  const midLng = (Math.min(...lngs) + Math.max(...lngs)) / 2
+  const lngScale = Math.cos((midLat * Math.PI) / 180) // 경도 1도는 위도 1도보다 짧다
+  const spanX = (Math.max(...lngs) - Math.min(...lngs)) * lngScale
+  const spanY = Math.max(...lats) - Math.min(...lats)
+  const span = Math.max(spanX, spanY) || 1 // 한 곳이거나 같은 위치면 가운데에 놓는다
+  return spots.map((spot) => ({
+    left: 50 + (((spot.coords.lng - midLng) * lngScale) / span) * 68,
+    top: 50 - ((spot.coords.lat - midLat) / span) * 56,
+  }))
+}
 
 function formatStopTime(index: number) {
   const totalMinutes = 10 * 60 + index * 150
@@ -119,13 +131,9 @@ export default function RoutePage() {
 
   const editingRoute = editId ? savedRoutes.find((route) => route.id === editId) : undefined
 
-  const fallbackSpots = style
-    ? MOCK_SPOTS.filter((spot) => spot.category === style.category).slice(0, 3)
-    : MOCK_SPOTS.slice(0, 3)
-
   // editId로 처음 들어온 경우에만 저장해둔 경로를 편집 대상으로 불러온다. activeEditRouteId로 "같은 편집 세션"인지
   // 구분해서, 명소 추가하기 → 찜한 여행지 → 다시 이 페이지로 돌아오는 흐름에서 방금 추가한 명소가 저장된 옛 목록으로
-  // 덮어써지지 않게 한다. editId가 없는 새 경로 만들기 흐름에서는 routeSpotIds가 비어있을 때만 미리보기 목록을 채운다.
+  // 덮어써지지 않게 한다.
   useEffect(() => {
     if (editingRoute) {
       if (activeEditRouteId !== editId) {
@@ -135,20 +143,14 @@ export default function RoutePage() {
       }
     } else if (!editId) {
       if (activeEditRouteId !== null) setActiveEditRouteId(null)
-      if (routeSpotIds.length === 0 && fallbackSpots.length > 0) {
-        setRouteOrder(fallbackSpots.map((spot) => spot.id))
-      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editId])
 
-  // 저장/수정 직후에는 clearRoute()로 routeSpotIds가 비워지므로, 방금 저장한 내용이 기본 미리보기(fallbackSpots)로
-  // 바뀌어 보이지 않도록 저장 시점에 담아둔 savedSpotIds를 그대로 보여준다.
-  const spots = saved
-    ? (savedSpotIds.map((id) => MOCK_SPOTS.find((spot) => spot.id === id)).filter(Boolean) as Spot[])
-    : routeSpotIds.length > 0
-      ? (routeSpotIds.map((id) => MOCK_SPOTS.find((spot) => spot.id === id)).filter(Boolean) as Spot[])
-      : fallbackSpots
+  // 저장/수정 직후에는 clearRoute()로 routeSpotIds가 비워지므로, 방금 저장한 내용이 빈 화면으로 바뀌어 보이지 않도록
+  // 저장 시점에 담아둔 savedSpotIds를 그대로 보여준다. 경로에는 id 만 저장돼 있어서 관광지 정보는 서버에서 받아온다.
+  const { spots, loading: spotsLoading, error: spotsError } = useSpotsByIds(saved ? savedSpotIds : routeSpotIds)
+  const positions = pinPositions(spots)
 
   const autoRouteName = generateRouteName(spots)
   // 저장하지 않은 이동 경고는 "저장된 경로를 편집 중"일 때만 띄운다. 새 경로 만들기 화면은 기본적으로
@@ -226,10 +228,7 @@ export default function RoutePage() {
         <div className="relative h-[340px] w-full overflow-hidden bg-gradient-to-br from-secondary-100 via-secondary-50 to-tertiary-100 dark:from-secondary-950/40 dark:via-neutral-900 dark:to-tertiary-950/40">
           <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 h-full w-full">
             <polyline
-              points={spots.map((_, i) => {
-                const pos = PIN_POSITIONS[i] ?? PIN_POSITIONS[PIN_POSITIONS.length - 1]
-                return `${pos.left},${pos.top}`
-              }).join(' ')}
+              points={positions.map((pos) => `${pos.left},${pos.top}`).join(' ')}
               fill="none"
               stroke="var(--color-primary-400)"
               strokeWidth={1}
@@ -238,7 +237,7 @@ export default function RoutePage() {
           </svg>
 
           {spots.map((spot, index) => {
-            const pos = PIN_POSITIONS[index] ?? PIN_POSITIONS[PIN_POSITIONS.length - 1]
+            const pos = positions[index]
             return (
               <div
                 key={spot.id}
@@ -295,7 +294,11 @@ export default function RoutePage() {
             경로에 명소 추가하기
           </Link>
 
-          {spots.length === 0 ? (
+          {spotsLoading || (spots.length === 0 && spotsError) ? (
+            <p className="mt-6 rounded-2xl bg-neutral-50 p-6 text-center text-sm text-neutral-500 dark:bg-neutral-800/40 dark:text-neutral-400" aria-busy={spotsLoading}>
+              {spotsLoading ? '경로의 명소를 불러오는 중…' : spotsError}
+            </p>
+          ) : spots.length === 0 ? (
             <div className="mt-6 flex flex-col items-center rounded-2xl bg-neutral-50 p-6 text-center dark:bg-neutral-800/40">
               <p className="text-sm text-neutral-500 dark:text-neutral-400">
                 경로에 담긴 명소가 없어요. 찜한 여행지에서 추가해보세요.
@@ -362,9 +365,7 @@ export default function RoutePage() {
                               <ArrowDown className="h-3.5 w-3.5" strokeWidth={2.4} />
                             </button>
                           </div>
-                          <div
-                            className={`h-16 w-16 shrink-0 rounded-xl bg-gradient-to-br ${SPOT_GRADIENTS[spot.id] ?? 'from-neutral-300 to-neutral-400'}`}
-                          />
+                          <SpotImage src={pickImage(spot, 'thumb')} seed={spot.id} className="h-16 w-16 shrink-0 rounded-xl" />
                         </div>
                       </div>
                     </div>
@@ -400,7 +401,7 @@ export default function RoutePage() {
           <div className="mt-3 flex gap-2">
             <button
               type="button"
-              disabled={saved || spots.length === 0}
+              disabled={saved || spots.length === 0 || spotsLoading}
               onClick={() => requireAuth(performSave)}
               className={`flex flex-1 items-center justify-center gap-2 rounded-full py-3 text-sm font-bold shadow-sm transition disabled:opacity-40 ${
                 saved ? 'bg-secondary-400 text-neutral-900' : 'bg-primary-800 text-white hover:bg-primary-900'

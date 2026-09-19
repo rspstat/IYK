@@ -1,9 +1,9 @@
 import { useMemo } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { ArrowLeft, User, MapPin, Trash2, Waypoints, ChevronRight, Compass } from 'lucide-react'
-import { MOCK_SPOTS } from '../data/mockSpots'
 import { useTravelStore } from '../store/useTravelStore'
 import { useAuthStore } from '../store/useAuthStore'
+import { useSpotsByIds } from '../hooks/useSpotsByIds'
 import BottomNav from '../components/BottomNav'
 
 function formatSavedDate(timestamp: number) {
@@ -23,6 +23,11 @@ export default function MyPage() {
     () => [...savedRoutes].sort((a, b) => b.createdAt - a.createdAt),
     [savedRoutes],
   )
+
+  // 저장한 경로에는 관광지 id 만 들어 있어서, 경로에 표시할 이름은 서버에서 받아온다(경로들이 공유하는 id 는 한 번만).
+  const allSpotIds = useMemo(() => Array.from(new Set(sortedRoutes.flatMap((route) => route.spotIds))), [sortedRoutes])
+  const { spots: knownSpots } = useSpotsByIds(allSpotIds)
+  const spotsById = useMemo(() => new Map(knownSpots.map((spot) => [spot.id, spot])), [knownSpots])
 
   if (!isLoggedIn) {
     return <Navigate to={`/login?redirect=${encodeURIComponent('/mypage')}`} replace />
@@ -84,9 +89,7 @@ export default function MyPage() {
           ) : (
             <div className="mt-3 flex flex-col gap-3">
               {sortedRoutes.map((route) => {
-                const spots = route.spotIds
-                  .map((id) => MOCK_SPOTS.find((spot) => spot.id === id))
-                  .filter((spot): spot is (typeof MOCK_SPOTS)[number] => Boolean(spot))
+                const spots = route.spotIds.map((id) => spotsById.get(id)).filter((spot) => spot !== undefined)
                 return (
                   <article key={route.id} className="rounded-2xl bg-white p-4 shadow-sm dark:bg-neutral-900">
                     <div className="flex items-start justify-between gap-2">
@@ -95,7 +98,7 @@ export default function MyPage() {
                           {route.name}
                         </h3>
                         <p className="mt-0.5 text-xs text-neutral-400 dark:text-neutral-500">
-                          {formatSavedDate(route.createdAt)} · {spots.length}곳
+                          {formatSavedDate(route.createdAt)} · {route.spotIds.length}곳
                         </p>
                       </div>
                       <button

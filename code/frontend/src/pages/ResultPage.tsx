@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   ArrowLeft,
@@ -7,16 +8,22 @@ import {
   Share2,
   Sparkles,
   ChevronRight,
+  Lightbulb,
   Route as RouteIcon,
 } from 'lucide-react'
+import { spotApi } from '../api/spots'
+import { getErrorMessage } from '../api/client'
 import { MBTI_STYLES } from '../data/mbtiStyles'
-import { MOCK_SPOTS } from '../data/mockSpots'
 import { CATEGORY_META } from '../data/categoryMeta'
-import { CATEGORY_ICON, CONGESTION_META } from '../data/spotMeta'
-import { SPOT_GRADIENTS } from '../data/spotGradients'
+import { CATEGORY_ICON } from '../data/spotMeta'
 import { useTravelStore } from '../store/useTravelStore'
+import { useSpotStore } from '../store/useSpotStore'
 import { useRequireAuth } from '../hooks/useRequireAuth'
+import { useApiData } from '../hooks/useApiData'
 import BottomNav from '../components/BottomNav'
+import CongestionBadge from '../components/CongestionBadge'
+import SpotImage from '../components/SpotImage'
+import { pickImage } from '../data/spotImage'
 
 export default function ResultPage() {
   const { mbti } = useParams<{ mbti: string }>()
@@ -25,7 +32,18 @@ export default function ResultPage() {
   const likedSpotIds = useTravelStore((state) => state.likedSpotIds)
   const toggleLike = useTravelStore((state) => state.toggleLike)
   const setRouteOrder = useTravelStore((state) => state.setRouteOrder)
+  const rememberSpots = useSpotStore((state) => state.remember)
   const requireAuth = useRequireAuth()
+
+  // 추천 명소는 서버(한국관광공사 데이터 기반)에서 받아온다. 유형별 성향 문구는 화면이 바로 그릴 수 있게 로컬 데이터를 쓴다.
+  const { data, error, loading, waitingForServer, reload } = useApiData(
+    () => spotApi.recommendations(style!.type),
+    style ? style.type : null,
+  )
+
+  useEffect(() => {
+    if (data) rememberSpots(data.spots)
+  }, [data, rememberSpots])
 
   if (!style) {
     return (
@@ -38,7 +56,7 @@ export default function ResultPage() {
     )
   }
 
-  const spots = MOCK_SPOTS.filter((spot) => spot.category === style.category)
+  const spots = data?.spots ?? []
   const CategoryIcon = CATEGORY_ICON[style.category]
 
   // 함수 선언은 호이스팅돼서 위의 `if (!style) return` 타입 좁히기가 이어지지 않으므로 화살표 함수로 둔다.
@@ -85,6 +103,10 @@ export default function ResultPage() {
               </span>
             ))}
           </div>
+          <p className="mt-3 flex items-start gap-1.5 rounded-xl bg-primary-50 px-3 py-2 text-[11px] leading-relaxed text-primary-800 dark:bg-primary-950/30 dark:text-primary-200">
+            <Lightbulb className="mt-0.5 h-3.5 w-3.5 shrink-0" strokeWidth={2.2} />
+            {style.tip}
+          </p>
         </section>
 
         <section className="mx-5 mt-4 rounded-2xl bg-white p-4 shadow-sm dark:bg-neutral-900">
@@ -109,7 +131,8 @@ export default function ResultPage() {
           <button
             type="button"
             onClick={handleAddRoute}
-            className="flex w-full items-center justify-center gap-2 rounded-full bg-primary-800 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-primary-900"
+            disabled={spots.length === 0}
+            className="flex w-full items-center justify-center gap-2 rounded-full bg-primary-800 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-primary-900 disabled:opacity-40"
           >
             <RouteIcon className="h-4 w-4" strokeWidth={2.2} />
             {spots.length}개 경로 담기
@@ -128,16 +151,52 @@ export default function ResultPage() {
             <Sparkles className="h-4 w-4 text-primary-500" strokeWidth={2.2} />
             당신만을 위한 추천 스팟
           </h2>
+
+          {loading && (
+            <div className="flex flex-col gap-4" aria-busy="true">
+              {waitingForServer && (
+                <p className="rounded-2xl bg-white p-4 text-center text-xs text-neutral-500 shadow-sm dark:bg-neutral-900 dark:text-neutral-400">
+                  충북 관광 데이터를 준비하고 있어요. 잠시만 기다려주세요…
+                </p>
+              )}
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="animate-pulse overflow-hidden rounded-2xl bg-white shadow-sm dark:bg-neutral-900">
+                  <div className="h-40 bg-neutral-200 dark:bg-neutral-800" />
+                  <div className="space-y-2 p-4">
+                    <div className="h-4 w-2/3 rounded bg-neutral-200 dark:bg-neutral-800" />
+                    <div className="h-3 w-full rounded bg-neutral-100 dark:bg-neutral-800/70" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {!loading && error !== undefined && (
+            <div className="rounded-2xl bg-white p-6 text-center shadow-sm dark:bg-neutral-900">
+              <p className="text-sm text-neutral-500 dark:text-neutral-400">{getErrorMessage(error)}</p>
+              <button
+                type="button"
+                onClick={reload}
+                className="mt-3 rounded-full bg-primary-800 px-5 py-2 text-xs font-bold text-white transition hover:bg-primary-900"
+              >
+                다시 시도
+              </button>
+            </div>
+          )}
+
+          {!loading && error === undefined && spots.length === 0 && (
+            <p className="rounded-2xl bg-white p-6 text-center text-sm text-neutral-500 shadow-sm dark:bg-neutral-900 dark:text-neutral-400">
+              추천할 명소를 아직 찾지 못했어요.
+            </p>
+          )}
+
           <div className="flex flex-col gap-4">
-            {spots.map((spot) => {
+            {spots.map((spot, index) => {
               const liked = likedSpotIds.includes(spot.id)
-              const congestion = CONGESTION_META[spot.congestion]
-              const CongestionIcon = congestion.icon
               return (
                 <div key={spot.id} className="overflow-hidden rounded-2xl bg-white shadow-sm dark:bg-neutral-900">
-                  <div
-                    className={`relative h-40 bg-gradient-to-br ${SPOT_GRADIENTS[spot.id] ?? 'from-neutral-300 to-neutral-400'}`}
-                  >
+                  {/* 처음 보이는 3장만 원본(선명), 나머지는 썸네일(약 20KB)로 데이터 사용량을 줄인다 */}
+                  <SpotImage src={pickImage(spot, index < 3 ? 'full' : 'thumb')} seed={spot.id} className="h-40">
                     <span className="absolute left-2.5 top-2.5 flex items-center gap-1 rounded-full bg-white/85 px-2 py-1 text-[11px] font-semibold text-neutral-700 dark:bg-neutral-900/80 dark:text-neutral-200">
                       <CategoryIcon className="h-3 w-3" strokeWidth={2.2} />
                       {CATEGORY_META[spot.category].label}
@@ -150,20 +209,21 @@ export default function ResultPage() {
                     >
                       {liked ? '♥' : '♡'}
                     </button>
-                    <span
-                      className={`absolute bottom-2.5 right-2.5 flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-semibold ${congestion.className}`}
-                    >
-                      <CongestionIcon className="h-3 w-3" strokeWidth={2.2} />
-                      혼잡도 {congestion.label}
-                    </span>
-                  </div>
+                    <CongestionBadge level={spot.congestion} className="absolute bottom-2.5 right-2.5" />
+                  </SpotImage>
                   <div className="p-4">
                     <p className="font-headline text-sm font-bold text-neutral-900 dark:text-neutral-50">
                       {spot.name}
                     </p>
-                    <p className="mt-1 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
-                      {spot.summary}
+                    <p className="mt-0.5 flex items-center gap-1 text-[11px] text-neutral-400 dark:text-neutral-500">
+                      <MapPin className="h-3 w-3" strokeWidth={2.2} />
+                      {spot.region}
                     </p>
+                    {spot.summary && (
+                      <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
+                        {spot.summary}
+                      </p>
+                    )}
                     <Link
                       to={`/spot/${spot.id}`}
                       className="mt-2 inline-flex items-center gap-0.5 text-xs font-semibold text-tertiary-600 dark:text-tertiary-400"

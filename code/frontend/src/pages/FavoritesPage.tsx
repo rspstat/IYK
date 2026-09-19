@@ -12,13 +12,15 @@ import {
   Rocket,
 } from 'lucide-react'
 import { MBTI_STYLES } from '../data/mbtiStyles'
-import { MOCK_SPOTS } from '../data/mockSpots'
 import { CATEGORY_META } from '../data/categoryMeta'
-import { CATEGORY_ICON, CONGESTION_META } from '../data/spotMeta'
-import { SPOT_GRADIENTS } from '../data/spotGradients'
+import { CATEGORY_ICON } from '../data/spotMeta'
 import { useTravelStore } from '../store/useTravelStore'
 import { useAuthStore } from '../store/useAuthStore'
+import { useSpotsByIds } from '../hooks/useSpotsByIds'
 import BottomNav from '../components/BottomNav'
+import CongestionBadge from '../components/CongestionBadge'
+import SpotImage from '../components/SpotImage'
+import { pickImage } from '../data/spotImage'
 import type { MbtiCategory } from '../types'
 
 function formatLikedDate(timestamp: number) {
@@ -46,13 +48,11 @@ export default function FavoritesPage() {
   const [filterCategory, setFilterCategory] = useState<MbtiCategory | 'all'>('all')
   const [selectedIds, setSelectedIds] = useState<string[]>(() => likedSpotIds)
 
+  // 찜에는 id 만 저장돼 있어서, 관광지 정보(이름·사진·혼잡도 등)는 서버에서 받아온다.
+  const { spots: fetchedSpots, loading: spotsLoading, error: spotsError } = useSpotsByIds(likedSpotIds)
   const likedSpots = useMemo(
-    () =>
-      likedSpotIds
-        .map((id) => MOCK_SPOTS.find((spot) => spot.id === id))
-        .filter((spot): spot is (typeof MOCK_SPOTS)[number] => Boolean(spot))
-        .sort((a, b) => (likedAt[b.id] ?? 0) - (likedAt[a.id] ?? 0)),
-    [likedSpotIds, likedAt],
+    () => [...fetchedSpots].sort((a, b) => (likedAt[b.id] ?? 0) - (likedAt[a.id] ?? 0)),
+    [fetchedSpots, likedAt],
   )
 
   const categoryCounts = useMemo(() => {
@@ -111,7 +111,13 @@ export default function FavoritesPage() {
           </div>
         </header>
 
-        {likedSpots.length === 0 ? (
+        {likedSpotIds.length > 0 && likedSpots.length === 0 && (spotsLoading || spotsError) ? (
+          <section className="mx-5 mt-6 rounded-2xl bg-white p-8 text-center shadow-sm dark:bg-neutral-900" aria-busy={spotsLoading}>
+            <p className="text-sm text-neutral-500 dark:text-neutral-400">
+              {spotsLoading ? '찜한 여행지를 불러오는 중…' : spotsError}
+            </p>
+          </section>
+        ) : likedSpots.length === 0 ? (
           <section className="mx-5 mt-6 flex flex-col items-center rounded-2xl bg-white p-8 text-center shadow-sm dark:bg-neutral-900">
             <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary-50 text-primary-600 dark:bg-primary-950/40 dark:text-primary-400">
               <Compass className="h-6 w-6" strokeWidth={2} />
@@ -204,15 +210,12 @@ export default function FavoritesPage() {
 
             <section className="flex flex-col gap-4 px-5 py-3">
               {visibleSpots.map((spot) => {
-                const congestion = CONGESTION_META[spot.congestion]
                 const recommendedType = recommendedTypeFor(spot.category)
                 const selected = selectedIds.includes(spot.id)
                 const inRoute = routeSpotIds.includes(spot.id)
                 return (
                   <article key={spot.id} className="overflow-hidden rounded-2xl bg-white shadow-sm dark:bg-neutral-900">
-                    <div
-                      className={`relative h-44 bg-gradient-to-br ${SPOT_GRADIENTS[spot.id] ?? 'from-neutral-300 to-neutral-400'}`}
-                    >
+                    <SpotImage src={pickImage(spot, 'full')} seed={spot.id} className="h-44">
                       <div className="absolute left-3 top-3 flex items-center gap-2">
                         <button
                           type="button"
@@ -239,25 +242,20 @@ export default function FavoritesPage() {
                         <Heart className="h-5 w-5" strokeWidth={2.2} fill="currentColor" />
                       </button>
                       <div className="absolute bottom-3 left-3 flex items-center gap-1.5">
-                        <span
-                          className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${congestion.className}`}
-                        >
-                          <congestion.icon className="h-3 w-3" strokeWidth={2.2} />
-                          혼잡도 {congestion.label}
-                        </span>
+                        <CongestionBadge level={spot.congestion} />
                         <span className="rounded-full bg-black/50 px-2 py-0.5 text-[11px] font-medium text-white">
                           {spot.region}
                         </span>
                       </div>
-                    </div>
+                    </SpotImage>
 
                     <div className="p-4">
                       <h3 className="font-headline text-base font-bold leading-snug text-neutral-900 dark:text-neutral-50">
                         {spot.name}
                       </h3>
                       <p className="mt-1 flex items-center gap-1 text-xs text-neutral-400 dark:text-neutral-500">
-                        <MapPin className="h-3.5 w-3.5 text-tertiary-500" strokeWidth={2} />
-                        {spot.region} · 상세 위치 연동 예정
+                        <MapPin className="h-3.5 w-3.5 shrink-0 text-tertiary-500" strokeWidth={2} />
+                        <span className="line-clamp-1">{spot.summary ?? spot.region}</span>
                       </p>
                       <div className="mt-3 flex items-center justify-between border-t border-neutral-100 pt-2.5 text-xs text-neutral-400 dark:border-neutral-800 dark:text-neutral-500">
                         <span className="flex items-center gap-1">
