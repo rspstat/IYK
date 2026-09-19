@@ -1,4 +1,4 @@
-package com.iyk.backend.domain.comment.dto;
+package com.iyk.backend.domain.like.dto;
 
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
@@ -8,10 +8,7 @@ import lombok.Getter;
 @Getter
 @Builder
 @AllArgsConstructor
-public class CommentResponse {
-    private Long id;
-    private Long authorId;
-    private String author;
-    private String content;
+public class MyLikeResponse {
+    private String spotId;
     private LocalDateTime createdAt;
 }

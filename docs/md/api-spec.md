@@ -1,4 +1,4 @@
-# API 명세서 (v1.2)
+# API 명세서 (v1.3)
 
 - 작성일: 2026-07-13
 - 회의록(2026-07-05)에서 합의한 대로, 이 문서가 확정되기 전까지는 프론트엔드/백엔드 어느 쪽도 응답 필드명을 임의로 바꾸지 않습니다. 변경이 필요하면 이 문서를 먼저 고치고 팀에 공유합니다.
@@ -165,12 +165,23 @@
 { "spotId": "string", "liked": true, "likeCount": 12 }
 ```
 
+### `GET /api/me/likes` — 로그인 필요
+
+내가 찜한 관광지 목록. 최근에 찜한 순. 새로고침·재로그인·다른 기기에서 찜 상태를 복원하는 용도(v1.3 추가). 토큰이 없으면 `401 UNAUTHORIZED`.
+
+```json
+// response 200
+{ "likes": [ { "spotId": "string", "createdAt": "2026-07-13T10:00:00" } ] }
+```
+
 ### `GET /api/spots/{id}/comments`
 
 ```json
 // response 200
-{ "comments": [ { "id": 1, "author": "string", "content": "string", "createdAt": "2026-07-13T10:00:00" } ] }
+{ "comments": [ { "id": 1, "authorId": 3, "author": "string", "content": "string", "createdAt": "2026-07-13T10:00:00" } ] }
 ```
+
+`authorId`(v1.3 추가)는 작성자의 `users.id`로, 로그인 응답의 `user.id`와 비교해 "내 댓글"에만 삭제 버튼을 보여주는 용도입니다. 닉네임은 중복될 수 있어서 `author`로 비교하지 않습니다.
 
 ### `POST /api/spots/{id}/comments`
 
@@ -179,7 +190,7 @@
 { "content": "string" }
 
 // response 201
-{ "id": 1, "author": "string", "content": "string", "createdAt": "2026-07-13T10:00:00" }
+{ "id": 1, "authorId": 3, "author": "string", "content": "string", "createdAt": "2026-07-13T10:00:00" }
 ```
 
 ### `DELETE /api/comments/{commentId}`
@@ -205,3 +216,4 @@
 - v1.0 (2026-07-13): 최초 작성.
 - v1.1 (2026-08-02): 인증(회원가입/로그인, JWT)과 좋아요·댓글 CRUD 실제 구현 완료. 미인증 요청의 403 처리 관련 알려진 제약 기록.
 - v1.2 (2026-09-19): 에러 응답 통일. 미인증 요청을 `401 UNAUTHORIZED` JSON으로 처리(커스텀 `AuthenticationEntryPoint`), `@Valid` 검증 실패·깨진 JSON·없는 경로·405·미처리 예외도 공통 에러 포맷으로 반환(이전에는 빈 본문 403 또는 기본 에러 페이지). 공통 규칙에 `code` 목록 추가.
+- v1.3 (2026-09-19): 프론트 연동을 위해 하위 호환 확장 2건. 댓글 응답에 `authorId` 추가, `GET /api/me/likes`(내 찜 목록) 추가. 백엔드 통합 테스트(`ApiContractTests`)로 에러 포맷·찜·댓글 계약을 검증.

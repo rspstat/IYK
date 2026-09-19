@@ -1,8 +1,12 @@
 package com.iyk.backend.domain.like;
 
 import com.iyk.backend.domain.like.dto.LikeResponse;
+import com.iyk.backend.domain.like.dto.MyLikeResponse;
+import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -17,5 +21,11 @@ public class LikeController {
     public LikeResponse toggleLike(@PathVariable("id") String spotId, Authentication authentication) {
         Long userId = (Long) authentication.getPrincipal();
         return likeService.toggleLike(userId, spotId);
+    }
+
+    @GetMapping("/api/me/likes")
+    public Map<String, List<MyLikeResponse>> getMyLikes(Authentication authentication) {
+        Long userId = (Long) authentication.getPrincipal();
+        return Map.of("likes", likeService.getMyLikes(userId));
     }
 }

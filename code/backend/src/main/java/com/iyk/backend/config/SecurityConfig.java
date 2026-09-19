@@ -39,6 +39,9 @@ public class SecurityConfig {
                                 auth.requestMatchers(
                                                 "/api/auth/**", "/api/health", "/h2-console/**", "/error")
                                         .permitAll()
+                                        // 아래 GET 전체 허용보다 먼저 와야 한다 (첫 번째로 매칭되는 규칙이 적용됨)
+                                        .requestMatchers("/api/me/**")
+                                        .authenticated()
                                         .requestMatchers(HttpMethod.GET, "/api/**")
                                         .permitAll()
                                         .anyRequest()

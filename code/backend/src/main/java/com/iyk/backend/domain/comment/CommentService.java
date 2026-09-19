@@ -50,6 +50,7 @@ public class CommentService {
                 userRepository.findById(comment.getUserId()).map(User::getNickname).orElse("알 수 없음");
         return CommentResponse.builder()
                 .id(comment.getId())
+                .authorId(comment.getUserId())
                 .author(author)
                 .content(comment.getContent())
                 .createdAt(comment.getCreatedAt())
