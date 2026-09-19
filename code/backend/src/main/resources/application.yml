@@ -20,6 +20,9 @@ spring:
 
 server:
   port: 8080
+  error:
+    # Spring DevTools가 개발 모드에서 켜는 include-stacktrace=always 기본값을 명시적으로 덮어쓴다.
+    include-stacktrace: never
 
 jwt:
   # 개발용 기본값입니다. 배포 전 반드시 환경변수(JWT_SECRET)로 교체하세요.

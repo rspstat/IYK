@@ -19,6 +19,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final JsonAuthenticationEntryPoint authenticationEntryPoint;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -33,12 +34,16 @@ public class SecurityConfig {
                         session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(
                         auth ->
-                                auth.requestMatchers("/api/auth/**", "/api/health", "/h2-console/**")
+                                // /error를 열어두지 않으면 컨트롤러 예외(400 등)가 서블릿 컨테이너의 /error
+                                // 디스패치로 넘어가면서 인증 필터에 막혀 원래 상태코드 대신 빈 본문 403이 된다.
+                                auth.requestMatchers(
+                                                "/api/auth/**", "/api/health", "/h2-console/**", "/error")
                                         .permitAll()
                                         .requestMatchers(HttpMethod.GET, "/api/**")
                                         .permitAll()
                                         .anyRequest()
                                         .authenticated())
+                .exceptionHandling(handling -> handling.authenticationEntryPoint(authenticationEntryPoint))
                 .headers(headers -> headers.frameOptions(frame -> frame.disable()))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
