@@ -1,4 +1,4 @@
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   ArrowLeft,
   User,
@@ -20,9 +20,11 @@ import BottomNav from '../components/BottomNav'
 
 export default function ResultPage() {
   const { mbti } = useParams<{ mbti: string }>()
+  const navigate = useNavigate()
   const style = MBTI_STYLES.find((s) => s.type === mbti?.toUpperCase())
   const likedSpotIds = useTravelStore((state) => state.likedSpotIds)
   const toggleLike = useTravelStore((state) => state.toggleLike)
+  const setRouteOrder = useTravelStore((state) => state.setRouteOrder)
   const requireAuth = useRequireAuth()
 
   if (!style) {
@@ -38,6 +40,13 @@ export default function ResultPage() {
 
   const spots = MOCK_SPOTS.filter((spot) => spot.category === style.category)
   const CategoryIcon = CATEGORY_ICON[style.category]
+
+  function handleAddRoute() {
+    requireAuth(() => {
+      setRouteOrder(spots.map((spot) => spot.id))
+      navigate(`/route?mbti=${style.type}`)
+    })
+  }
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
@@ -95,7 +104,15 @@ export default function ResultPage() {
           </div>
         </section>
 
-        <div className="mx-5 mt-4">
+        <div className="mx-5 mt-4 flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={handleAddRoute}
+            className="flex w-full items-center justify-center gap-2 rounded-full bg-primary-800 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-primary-900"
+          >
+            <RouteIcon className="h-4 w-4" strokeWidth={2.2} />
+            {spots.length}개 경로 담기
+          </button>
           <button
             type="button"
             className="flex w-full items-center justify-center gap-2 rounded-full bg-primary-500 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-primary-600"
@@ -160,14 +177,6 @@ export default function ResultPage() {
           </div>
         </section>
       </div>
-
-      <Link
-        to={`/route?mbti=${style.type}`}
-        aria-label="여행 경로 짜기"
-        className="fixed bottom-24 right-5 flex h-12 w-12 items-center justify-center rounded-full bg-primary-600 text-white shadow-lg transition hover:bg-primary-700"
-      >
-        <RouteIcon className="h-5 w-5" strokeWidth={2.2} />
-      </Link>
 
       <BottomNav />
     </div>
