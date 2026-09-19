@@ -113,6 +113,7 @@ export default function RoutePage() {
   const requireAuth = useRequireAuth()
   const [saved, setSaved] = useState(false)
   const [savedName, setSavedName] = useState('')
+  const [savedSpotIds, setSavedSpotIds] = useState<string[]>([])
   const [routeName, setRouteName] = useState('')
   const [pendingNav, setPendingNav] = useState<string | null>(null)
 
@@ -141,8 +142,11 @@ export default function RoutePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editId])
 
-  const spots =
-    routeSpotIds.length > 0
+  // 저장/수정 직후에는 clearRoute()로 routeSpotIds가 비워지므로, 방금 저장한 내용이 기본 미리보기(fallbackSpots)로
+  // 바뀌어 보이지 않도록 저장 시점에 담아둔 savedSpotIds를 그대로 보여준다.
+  const spots = saved
+    ? (savedSpotIds.map((id) => MOCK_SPOTS.find((spot) => spot.id === id)).filter(Boolean) as Spot[])
+    : routeSpotIds.length > 0
       ? (routeSpotIds.map((id) => MOCK_SPOTS.find((spot) => spot.id === id)).filter(Boolean) as Spot[])
       : fallbackSpots
 
@@ -165,6 +169,7 @@ export default function RoutePage() {
     } else {
       saveCurrentRoute(spotIds, finalName)
     }
+    setSavedSpotIds(spotIds)
     setSavedName(finalName)
     setSaved(true)
     // 저장/수정이 끝나면 화면을 다시 초기 상태로 되돌려서, 다음에 들어올 때 방금 편집한 내용이 남아있지 않게 한다.
