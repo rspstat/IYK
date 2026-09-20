@@ -5,6 +5,7 @@ import ResultPage from './pages/ResultPage'
 import SpotDetailPage from './pages/SpotDetailPage'
 import RoutePage from './pages/RoutePage'
 import SearchPage from './pages/SearchPage'
+import SpotsPage from './pages/SpotsPage'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
 import FavoritesPage from './pages/FavoritesPage'
@@ -21,6 +22,7 @@ function App() {
           <Route path="/spot/:spotId" element={<SpotDetailPage />} />
           <Route path="/route" element={<RoutePage />} />
           <Route path="/search" element={<SearchPage />} />
+          <Route path="/spots" element={<SpotsPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/auth/kakao/callback" element={<KakaoCallbackPage />} />

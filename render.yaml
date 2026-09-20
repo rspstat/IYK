@@ -1,0 +1,69 @@
+# Render 블루프린트: Render 대시보드에서 "New > Blueprint"로 이 저장소를 선택하면
+# 백엔드(Docker 웹 서비스)와 프론트(정적 사이트)가 한 번에 생성된다.
+# sync: false 로 표시된 값은 대시보드에서 직접 입력해야 한다(README 배포 섹션 참고).
+services:
+  - type: web
+    name: iyk-backend
+    runtime: docker
+    dockerfilePath: code/backend/Dockerfile
+    dockerContext: code/backend
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: SPRING_DATASOURCE_DRIVER
+        value: com.mysql.cj.jdbc.Driver
+      - key: SPRING_DATASOURCE_URL
+        sync: false # 예: jdbc:mysql://<host>:<port>/<db>?useSSL=true&serverTimezone=Asia/Seoul
+      - key: SPRING_DATASOURCE_USERNAME
+        sync: false
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false
+      - key: JWT_SECRET
+        sync: false # 32바이트 이상 랜덤 문자열
+      - key: APP_CORS_ALLOWED_ORIGINS
+        sync: false # 프론트 배포 후 나온 주소. 예: https://iyk-frontend.onrender.com
+      - key: H2_CONSOLE_ENABLED
+        value: "false"
+      - key: TOURAPI_SERVICE_KEY
+        sync: false
+      - key: TOURAPI_KEY_KOR
+        sync: false
+      - key: TOURAPI_KEY_RELATED
+        sync: false
+      - key: TOURAPI_KEY_PHOTO
+        sync: false
+      - key: TOURAPI_KEY_CONGESTION
+        sync: false
+      - key: TOURAPI_KEY_PET
+        sync: false
+      - key: TOURAPI_KEY_BARRIER_FREE
+        sync: false
+      - key: TOURAPI_KEY_WELLNESS
+        sync: false
+      - key: TOURAPI_KEY_CAMPING
+        sync: false
+      - key: TOURAPI_KEY_DURUNUBI
+        sync: false
+      - key: KAKAO_REST_API_KEY
+        sync: false
+      - key: KAKAO_CLIENT_SECRET
+        sync: false
+
+  - type: web
+    name: iyk-frontend
+    runtime: static
+    rootDir: code/frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    routes:
+      # React Router(BrowserRouter) SPA 라우팅: 없는 경로는 전부 index.html로 보내서 클라이언트 라우터가 처리하게 한다.
+      - type: rewrite
+        source: /(.*)
+        destination: /index.html
+    envVars:
+      - key: VITE_API_BASE_URL
+        sync: false # 백엔드 배포 후 나온 주소 + /api. 예: https://iyk-backend.onrender.com/api
+      - key: VITE_KAKAO_JS_KEY
+        sync: false
+      - key: VITE_PUBLIC_URL
+        sync: false # 프론트 자신의 배포 주소. 예: https://iyk-frontend.onrender.com

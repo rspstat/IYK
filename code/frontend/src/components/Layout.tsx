@@ -8,6 +8,7 @@ export default function Layout() {
     pathname.startsWith('/result/') ||
     pathname === '/route' ||
     pathname.startsWith('/spot/') ||
+    pathname === '/spots' ||
     pathname === '/login' ||
     pathname === '/signup' ||
     pathname === '/favorites'
