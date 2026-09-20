@@ -26,10 +26,12 @@ API 계약·DB 스키마·MBTI 매핑 기준 문서는 [docs/md/](../docs/md/)
 
 ### 카카오 지도 키 설정 (프론트)
 
+**이 저장소의 키는 `frontend/.env`에 이미 들어 있어서, 클론한 팀원은 따로 설정할 필요가 없습니다.** 다만 이 키는 카카오 콘솔에 등록한 주소에서만 동작하므로 개발 서버를 반드시 **`http://localhost:5173`**으로 열어야 합니다(`127.0.0.1`이나 5173이 이미 쓰여서 Vite가 옮겨 간 `5174` 같은 다른 주소에서는 지도가 뜨지 않습니다). 아래는 다른 카카오 앱의 키를 쓰거나 새로 만들 때의 방법입니다.
+
 1. [Kakao Developers](https://developers.kakao.com)에서 앱을 만들고 **[앱] > [플랫폼 키] > JavaScript 키**를 복사합니다(REST API 키가 아닙니다).
 2. 그 키의 **JavaScript SDK 도메인**에 사이트 주소를 등록합니다. 개발 중에는 `http://localhost:5173`, 배포하면 배포 도메인도 추가합니다.
 3. **[제품 설정] > [카카오맵] > [사용 설정]을 ON**으로 바꿉니다(2024년 12월부터 신규 앱은 필수).
-4. `frontend/.env.local`에 `VITE_KAKAO_MAP_KEY=복사한키`를 넣고 개발 서버를 다시 시작합니다([frontend/.env.example](frontend/.env.example) 참고, `.env.local`은 커밋되지 않습니다).
+4. `frontend/.env.local`에 `VITE_KAKAO_MAP_KEY=복사한키`를 넣고 개발 서버를 다시 시작합니다. `.env.local`이 저장소의 `.env`보다 우선하며 커밋되지 않습니다([frontend/.env.example](frontend/.env.example) 참고).
 
 지도를 불러오지 못하면(키·도메인·사용 설정 문제) 화면에 원인 안내가 표시되고 나머지 기능은 그대로 동작합니다. 관광지 상세의 "카카오맵에서 보기"·"길찾기" 링크는 키 없이도 동작합니다.
 
