@@ -36,4 +36,8 @@ API 계약 전체는 [docs/md/api-spec.md](../../docs/md/api-spec.md), DB 스키
 
 ## CORS
 
-로컬 프론트엔드(`http://localhost:5173`)에서의 요청만 우선 허용해뒀습니다(`config/CorsConfig.java`). 배포 도메인이 정해지면 여기에 추가해야 합니다.
+허용 도메인은 `app.cors.allowed-origins`(환경변수 `APP_CORS_ALLOWED_ORIGINS`, 콤마로 여러 개 가능)로 설정합니다. 기본값은 로컬 프론트엔드(`http://localhost:5173`)만 허용합니다(`config/CorsConfig.java`).
+
+## 배포
+
+Render(무료 티어) + Aiven(무료 MySQL) 기준 배포 절차는 [docs/md/deploy.md](../../docs/md/deploy.md) 참고. 배포 환경에서 필요한 환경변수(`SPRING_DATASOURCE_*`, `JWT_SECRET`, `APP_CORS_ALLOWED_ORIGINS` 등)는 `application.yml`에 기본값과 함께 정리되어 있습니다.

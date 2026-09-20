@@ -7,12 +7,15 @@ spring:
     # IYK_ENV_FILE 로 파일 경로를 바꿀 수 있다 — 테스트는 존재하지 않는 파일을 가리켜 실제 키를 읽지 않게 한다(build.gradle).
     import: optional:file:${IYK_ENV_FILE:.env}[.properties]
   datasource:
-    url: jdbc:h2:mem:iyk;MODE=MySQL
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
+    # 배포 환경(MySQL)에서는 SPRING_DATASOURCE_* 환경변수로 덮어쓴다. 안 주면 로컬 개발용 H2 인메모리를 쓴다.
+    url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:iyk;MODE=MySQL}
+    driver-class-name: ${SPRING_DATASOURCE_DRIVER:org.h2.Driver}
+    username: ${SPRING_DATASOURCE_USERNAME:sa}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
   jpa:
     hibernate:
+      # 아직 마이그레이션 도구(Flyway 등)가 없어서 엔티티 기준으로 스키마를 자동 반영한다.
+      # MySQL로 처음 배포할 때도 이 설정이 테이블을 만들어준다.
       ddl-auto: update
     show-sql: true
     properties:
@@ -20,14 +23,21 @@ spring:
         format_sql: true
   h2:
     console:
-      enabled: true
+      # 배포 환경에서는 H2 콘솔을 끈다(H2_CONSOLE_ENABLED=false). 실제로 H2를 안 쓰더라도 콘솔 자체는 인증 없이 노출되므로 꺼둔다.
+      enabled: ${H2_CONSOLE_ENABLED:true}
       path: /h2-console
 
 server:
-  port: 8080
+  # Render 같은 PaaS는 PORT 환경변수로 리스닝 포트를 지정한다.
+  port: ${PORT:8080}
   error:
     # Spring DevTools가 개발 모드에서 켜는 include-stacktrace=always 기본값을 명시적으로 덮어쓴다.
     include-stacktrace: never
+
+app:
+  cors:
+    # 프론트 배포 도메인을 콤마로 여러 개 넣을 수 있다(APP_CORS_ALLOWED_ORIGINS=https://a.com,https://b.com).
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173}
 
 kakao:
   # 카카오 로그인(OAuth). Kakao Developers 앱의 [플랫폼 키] > REST API 키와 그 클라이언트 시크릿. 비워두면 카카오 로그인 버튼이 숨겨진다.
