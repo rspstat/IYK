@@ -61,9 +61,12 @@ services:
         source: /(.*)
         destination: /index.html
     envVars:
+      # Vite 8 은 Node 20.19+ / 22.12+ 가 필요하다. Render 기본 버전에 기대지 않고 고정한다.
+      - key: NODE_VERSION
+        value: 22.12.0
       - key: VITE_API_BASE_URL
         sync: false # 백엔드 배포 후 나온 주소 + /api. 예: https://iyk-backend.onrender.com/api
-      - key: VITE_KAKAO_JS_KEY
-        sync: false
+      # 카카오 JavaScript 키는 code/frontend/.env(VITE_KAKAO_MAP_KEY)에 커밋돼 있어 따로 넣지 않아도 된다.
+      # 다른 카카오 앱의 키를 쓰려면 VITE_KAKAO_JS_KEY 를 추가한다(이 값이 우선한다).
       - key: VITE_PUBLIC_URL
         sync: false # 프론트 자신의 배포 주소. 예: https://iyk-frontend.onrender.com

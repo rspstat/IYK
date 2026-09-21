@@ -50,7 +50,7 @@ Render 무료 웹 서비스는 15분간 요청이 없으면 슬립 상태가 되
 | 키 | 값 |
 |---|---|
 | `VITE_API_BASE_URL` | 일단 비워두거나 임시값(4번에서 교체) |
-| `VITE_KAKAO_JS_KEY` | 카카오 개발자 콘솔의 JavaScript 키 |
+| (`VITE_KAKAO_JS_KEY`) | **입력 불필요** — 카카오 JavaScript 키가 `code/frontend/.env`에 커밋돼 있다. 다른 카카오 앱의 키를 쓸 때만 추가 |
 | `VITE_PUBLIC_URL` | 일단 비워둬도 됨(4번에서 교체) |
 
 ## 4. 서로의 실제 주소로 교체 (첫 배포 후 1회)
