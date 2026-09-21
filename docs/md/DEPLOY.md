@@ -40,7 +40,7 @@ iyk-frontend.onrender.com                           iyk-backend.onrender.com/api
 | 지도·공유·로그인 | Kakao Developers 앱 "여행가유" | 카카오맵 SDK, 카카오톡 공유, 카카오 로그인 |
 | 빌드 | Docker 멀티스테이지(`eclipse-temurin:21-jdk` → `21-jre`), Gradle 8.14, Node 22.12 + Vite 8 | |
 | 빌드 안정화 | Maven Central의 Google Cloud Storage 미러 | Render 빌드 IP가 Maven Central에서 429를 받는 문제 회피(8장) |
-| 잠들기 방지(권장, 미적용) | UptimeRobot 무료 플랜 | 5분마다 `/api/health` 호출(9장) |
+| 잠들기·DB 꺼짐 방지 | GitHub Actions 예약 실행 ([`.github/workflows/keep-alive.yml`](../../.github/workflows/keep-alive.yml)) | 5분마다 백엔드의 DB 조회 API를 호출(9장) |
 
 ## 3. Render 서비스 설정 (`render.yaml` 기준)
 
@@ -101,7 +101,7 @@ jdbc:mysql://<Host>:<Port>/defaultdb?useSSL=true&requireSSL=true&rewriteBatchedS
 
 **저장 데이터와 동기화**
 - 배포 직전에 한국관광공사 데이터(관광지 1,333곳, 혼잡도 예측 11,610행)를 미리 넣어 두었다. 회원·댓글 등 사용자 데이터는 비어 있는 상태로 시작했다.
-- 백엔드는 시작할 때 마지막 동기화가 **20시간 이내면 건너뛰고**(`SpotSyncRunner`), 아니면 백그라운드로 동기화한다(약 1~7분, 그동안 추천 API는 `503 DATA_NOT_READY`). 이후 매일 04:30(한국 시간)에 다시 동기화한다. Render 무료 서비스가 잠들어 있으면 이 새벽 동기화는 못 돌 수 있다(9장의 잠들기 방지 참고).
+- 백엔드는 시작할 때 마지막 동기화가 **20시간 이내면 건너뛰고**(`SpotSyncRunner`), 아니면 백그라운드로 동기화한다(약 1~7분, 그동안 추천 API는 `503 DATA_NOT_READY`). 이후 매일 04:30(한국 시간)에 다시 동기화한다. Render 무료 서비스가 잠들어 있으면 이 새벽 동기화는 못 돌 수 있다(9장의 잠들기 방지 참고). 이 동기화가 512MB 메모리에서 끝까지 도는지는 Render에서 아직 확인하지 못했다(9장).
 - Aiven 무료 서비스는 사용이 없으면 **전원이 꺼질 수 있다**(콘솔에서 다시 켤 수 있음). 서비스가 Running이 되기 전에는 호스트 주소가 조회되지 않는다.
 - Aiven은 기본키 없는 테이블 생성을 막는다(`sql_require_primary_key`). 그래서 시퀀스 테이블을 흉내 내는 `GenerationType.SEQUENCE`는 쓸 수 없다(8장).
 
@@ -206,8 +206,8 @@ jdbc:mysql://<Host>:<Port>/defaultdb?useSSL=true&requireSSL=true&rewriteBatchedS
 
 ## 9. 운영 시 알아둘 것
 
-- **첫 접속이 느림:** Render 무료 백엔드는 15분간 요청이 없으면 잠들고, 다시 깨어나는 데 30~60초 걸린다. 프론트(정적 사이트)는 잠들지 않는다. **심사·발표 전에는 미리 한 번 접속해 깨워 둔다.**
-- **잠들기 방지(권장, 아직 미적용):** [UptimeRobot](https://uptimerobot.com) 무료 플랜에서 HTTP 모니터를 만들어 `https://iyk-backend.onrender.com/api/health`를 5분 간격으로 호출한다. 이러면 새벽 04:30 동기화도 안정적으로 돈다.
+- **첫 접속이 느림(위 방지 장치가 밀리거나 꺼졌을 때):** Render 무료 백엔드는 15분간 요청이 없으면 잠들고, 다시 깨어나는 데 30~60초 걸린다. 프론트(정적 사이트)는 잠들지 않는다. **심사·발표 전에는 미리 한 번 접속해 깨워 둔다.**
+- **잠들기·DB 꺼짐 방지:** [`keep-alive.yml`](../../.github/workflows/keep-alive.yml) GitHub Actions가 5분마다 `https://iyk-backend.onrender.com/api/recommendations?mbti=ENFP`를 호출한다. `/api/health`는 DB를 건드리지 않아서, DB를 읽는 이 API로 백엔드와 Aiven DB를 함께 깨워 둔다. GitHub의 예약 실행은 바쁠 때 몇 분씩 밀릴 수 있어서 백엔드가 가끔 잠들 수 있고, 실행 결과는 저장소의 **Actions** 탭에서 볼 수 있다(수동 실행: **keep-alive → Run workflow**). 실패하면 GitHub가 저장소 소유자에게 메일을 보낸다. 서비스 주소를 바꾸면 이 파일의 URL도 함께 바꾼다.
 - **로그 보기:** Render 서비스 화면의 **Logs**. 빌드 실패는 Events → 해당 배포 → deploy logs.
 - **DB 직접 접속:** `mysql -h <Host> -P <Port> -u avnadmin --ssl-mode=REQUIRED defaultdb` (비밀번호는 Aiven 콘솔).
 - **비밀번호를 바꿀 때:** Aiven에서 재설정하고 Render의 `SPRING_DATASOURCE_PASSWORD`도 같은 값으로 바꾼다(백엔드 재배포). *배포 작업 중 DB 비밀번호가 대화에 노출된 적이 있으므로 이 절차를 한 번 하는 것을 권장한다.*
@@ -217,7 +217,8 @@ jdbc:mysql://<Host>:<Port>/defaultdb?useSSL=true&requireSSL=true&rewriteBatchedS
 
 ## 10. 남은 일
 
-- [ ] UptimeRobot으로 백엔드 잠들기 방지
+- [x] 백엔드·DB 깨워 두기: GitHub Actions `keep-alive` (2026-09-21 추가, 예약 실행이 도는지는 Actions 탭에서 확인)
+- [ ] 내일 새벽 04:30 동기화가 Render(512MB)에서 정상 종료됐는지 로그 확인(`TourAPI 동기화 완료`, 메모리 부족 흔적 없음)
 - [ ] Aiven 비밀번호 재설정 + Render `SPRING_DATASOURCE_PASSWORD` 갱신
 - [ ] 배포 주소에서 카카오 실제 로그인 확인(콘솔 3곳 등록 후)
 - [ ] TourAPI 운영 계정 신청(현재 개발 계정, 일 1,000건 수준 한도)
