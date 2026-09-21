@@ -9,7 +9,8 @@ COPY build.gradle settings.gradle ./
 RUN chmod +x gradlew
 
 COPY src ./src
-RUN ./gradlew --no-daemon bootJar -x test
+# Render 빌드 서버는 IP 를 여러 사용자가 함께 써서 Maven Central 이 가끔 429(요청 과다)를 돌려준다. 일시적인 오류라 몇 번 다시 시도한다.
+RUN n=0; until ./gradlew --no-daemon bootJar -x test; do       n=$((n+1));       if [ "$n" -ge 5 ]; then echo "빌드 재시도 5회 모두 실패"; exit 1; fi;       echo "빌드 실패, 30초 뒤 재시도($n/5)"; sleep 30;     done
 
 # 실행 스테이지: JDK 대신 가벼운 JRE만 담는다.
 FROM eclipse-temurin:21-jre
