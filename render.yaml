@@ -62,7 +62,7 @@ services:
     routes:
       # React Router(BrowserRouter) SPA 라우팅: 없는 경로는 전부 index.html로 보내서 클라이언트 라우터가 처리하게 한다.
       - type: rewrite
-        source: /(.*)
+        source: /*
         destination: /index.html
     envVars:
       # Vite 8 은 Node 20.19+ / 22.12+ 가 필요하다. Render 기본 버전에 기대지 않고 고정한다.
