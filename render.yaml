@@ -5,6 +5,8 @@ services:
   - type: web
     name: iyk-backend
     runtime: docker
+    # DB(Aiven, 인도 벵갈루루)와 가까운 리전. 기본값(오리건)이면 쿼리마다 왕복 지연이 커서 시작 동기화와 화면이 매우 느려진다.
+    region: singapore
     dockerfilePath: code/backend/Dockerfile
     dockerContext: code/backend
     plan: free
