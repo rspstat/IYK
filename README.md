@@ -115,7 +115,7 @@ MBTI 16개 유형을 기반으로 **충청북도** 여행지를 추천하는 웹
 - **Backend**: Spring Boot 3.5 · Java 21 (충북 관광지를 한국관광공사 API에서 받아 DB에 캐시하고 REST로 제공)
 - **지도**: 카카오 지도 API
 - **데이터**: 한국관광공사 OpenAPI (TourAPI)
-- **배포**: Render(백엔드 Docker 웹서비스 + 프론트 정적 사이트, 둘 다 무료 티어) + Aiven(무료 MySQL). 절차는 [docs/md/deploy.md](docs/md/deploy.md) 참고.
+- **배포**: Render(백엔드 Docker 웹서비스 + 프론트 정적 사이트, 둘 다 무료 티어) + Aiven(무료 MySQL). 절차는 [docs/md/DEPLOY.md](docs/md/deploy.md) 참고.
 
 <br/>
 

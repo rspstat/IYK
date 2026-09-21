@@ -40,4 +40,4 @@ API 계약 전체는 [docs/md/api-spec.md](../../docs/md/api-spec.md), DB 스키
 
 ## 배포
 
-Render(무료 티어) + Aiven(무료 MySQL) 기준 배포 절차는 [docs/md/deploy.md](../../docs/md/deploy.md) 참고. 배포 환경에서 필요한 환경변수(`SPRING_DATASOURCE_*`, `JWT_SECRET`, `APP_CORS_ALLOWED_ORIGINS` 등)는 `application.yml`에 기본값과 함께 정리되어 있습니다.
+Render(무료 티어) + Aiven(무료 MySQL) 기준 배포 절차는 [docs/md/DEPLOY.md](../../docs/md/DEPLOY.md) 참고. 배포 환경에서 필요한 환경변수(`SPRING_DATASOURCE_*`, `JWT_SECRET`, `APP_CORS_ALLOWED_ORIGINS` 등)는 `application.yml`에 기본값과 함께 정리되어 있습니다.
