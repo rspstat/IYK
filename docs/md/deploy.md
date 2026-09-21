@@ -22,7 +22,7 @@ Render 무료 웹 서비스는 15분간 요청이 없으면 슬립 상태가 되
 2. 서비스가 뜨면 **Overview** 탭에서 `Host`, `Port`, `User`(기본 `avnadmin`), `Password`, `Default database name` 확인.
 3. JDBC URL을 아래 형식으로 조립해둔다(뒤에서 Render 환경변수에 그대로 넣음):
    ```
-   jdbc:mysql://<Host>:<Port>/<Default database name>?useSSL=true&requireSSL=true&serverTimezone=Asia/Seoul
+   jdbc:mysql://<Host>:<Port>/<Default database name>?useSSL=true&requireSSL=true&rewriteBatchedStatements=true&serverTimezone=Asia/Seoul
    ```
 
 ## 2. GitHub에 push

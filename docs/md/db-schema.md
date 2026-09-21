@@ -34,7 +34,7 @@ users (1) ──── (0..1) user_profile_images
 | 컬럼 | 타입 | 제약 | 설명 |
 |---|---|---|---|
 | user_id | BIGINT | PK | `users.id` (앱 레벨 참조). 사용자당 한 장 |
-| data_url | CLOB / LONGTEXT | NOT NULL | 프로필 사진의 `data:image/jpeg;base64,…` 문자열(프론트가 256×256 으로 줄여 보내며 서버 상한 150KB) |
+| data_url | VARCHAR(400000) → MySQL 에서는 MEDIUMTEXT | NOT NULL | 프로필 사진의 `data:image/jpeg;base64,…` 문자열(프론트가 256×256 으로 줄여 보내며 서버 상한 150KB) |
 | updated_at | TIMESTAMP | | |
 
 사진 파일 저장소(S3 등) 없이 동작하게 하려고 DB 에 문자열로 넣었다. 댓글 조회 등에서 `users` 를 읽을 때 이미지가 딸려오지 않도록 `users` 와 분리했다. 나중에 사진을 많이 쓰게 되면 파일 저장소 + URL 저장 방식으로 바꾼다.

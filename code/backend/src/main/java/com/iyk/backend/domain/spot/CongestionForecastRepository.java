@@ -3,11 +3,12 @@ package com.iyk.backend.domain.spot;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
-public interface CongestionForecastRepository extends JpaRepository<CongestionForecast, Long> {
+public interface CongestionForecastRepository extends JpaRepository<CongestionForecast, UUID> {
 
     List<CongestionForecast> findBySpotIdAndDateGreaterThanEqualOrderByDate(String spotId, LocalDate from);
 

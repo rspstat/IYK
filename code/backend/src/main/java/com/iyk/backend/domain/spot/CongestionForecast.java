@@ -9,6 +9,7 @@ import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDate;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -29,9 +30,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CongestionForecast {
 
+    // IDENTITY(AUTO_INCREMENT)는 행마다 INSERT 를 따로 보내야 해서 JDBC 배치가 꺼진다. 시작 동기화가 1만여 행을 넣으므로
+    // 애플리케이션이 만드는 UUID 로 바꿔 배치 저장이 되게 한다. (SEQUENCE 는 MySQL 에서 번호표 테이블을 흉내 내는데,
+    // Aiven 같은 관리형 MySQL 은 기본키 없는 테이블을 막아 그 테이블을 만들지 못한다.)
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @Column(name = "spot_id", nullable = false)
     private String spotId;

@@ -15,7 +15,7 @@ services:
       - key: SPRING_DATASOURCE_DRIVER
         value: com.mysql.cj.jdbc.Driver
       - key: SPRING_DATASOURCE_URL
-        sync: false # 예: jdbc:mysql://<host>:<port>/<db>?useSSL=true&serverTimezone=Asia/Seoul
+        sync: false # 예: jdbc:mysql://<host>:<port>/<db>?useSSL=true&requireSSL=true&rewriteBatchedStatements=true&serverTimezone=Asia/Seoul
       - key: SPRING_DATASOURCE_USERNAME
         sync: false
       - key: SPRING_DATASOURCE_PASSWORD
@@ -25,6 +25,8 @@ services:
       - key: APP_CORS_ALLOWED_ORIGINS
         sync: false # 프론트 배포 후 나온 주소. 예: https://iyk-frontend.onrender.com
       - key: H2_CONSOLE_ENABLED
+        value: "false"
+      - key: JPA_SHOW_SQL
         value: "false"
       - key: TOURAPI_SERVICE_KEY
         sync: false
