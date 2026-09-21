@@ -9,8 +9,11 @@ COPY build.gradle settings.gradle ./
 RUN chmod +x gradlew
 
 COPY src ./src
-# Render 빌드 서버는 IP 를 여러 사용자가 함께 써서 Maven Central 이 가끔 429(요청 과다)를 돌려준다. 일시적인 오류라 몇 번 다시 시도한다.
-RUN n=0; until ./gradlew --no-daemon bootJar -x test; do       n=$((n+1));       if [ "$n" -ge 5 ]; then echo "빌드 재시도 5회 모두 실패"; exit 1; fi;       echo "빌드 실패, 30초 뒤 재시도($n/5)"; sleep 30;     done
+# Maven Central 미러를 먼저 쓰게 하는 초기화 스크립트(아래 429 오류 참고). 이 이미지 빌드에만 적용되고 로컬 빌드에는 영향이 없다.
+COPY docker-mirror.init.gradle ./
+# Render 빌드 서버의 IP 가 Maven Central 로부터 429(요청 과다)를 받아 빌드가 실패했다. 미러를 먼저 조회해 피하고(docker-mirror.init.gradle),
+# 그래도 일시적으로 실패하면 몇 번 다시 시도한다.
+RUN n=0; until ./gradlew --no-daemon --init-script docker-mirror.init.gradle bootJar -x test; do       n=$((n+1));       if [ "$n" -ge 5 ]; then echo "빌드 재시도 5회 모두 실패"; exit 1; fi;       echo "빌드 실패, 30초 뒤 재시도($n/5)"; sleep 30;     done
 
 # 실행 스테이지: JDK 대신 가벼운 JRE만 담는다.
 FROM eclipse-temurin:21-jre
