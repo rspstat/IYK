@@ -23,7 +23,7 @@ MBTI 16개 유형을 기반으로 **충청북도** 여행지를 추천하는 웹
 ## 서비스 흐름도
 </br>
 
-![서비스 흐름도](assets/flowchart-dark.xml)
+![서비스 흐름도](assets/flowchart-dark.png)
 
 <br/>
 
